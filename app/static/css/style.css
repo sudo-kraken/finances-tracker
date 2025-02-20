@@ -1,0 +1,263 @@
+/* GLOBAL STYLES */
+body {
+  background-color: #2e2e2e;
+  color: #ffffff;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container, .container-fluid {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* CARDS & FORMS */
+.form-card, .card {
+  background-color: #3c3c3c;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.card-title, h2, h3, h4 {
+  color: #ffffff;
+}
+
+.form-label {
+  color: #cccccc;
+}
+
+.form-control, .form-select {
+  background-color: #3c3c3c;
+  color: #ffffff;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+/* We do NOT force height on input-group elements here */
+.input-group .form-control,
+.input-group .btn {
+  height: auto; /* Let Bootstrap handle it */
+  line-height: normal;
+}
+
+/* Account card must have enough size to fit the table */
+.account-card {
+  min-width: 400px;
+  min-height: 350px;
+}
+
+/* BUTTONS */
+.btn {
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin: 5px 0;
+  transition: background-color 0.2s ease-in-out;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background-color: #2B6F63;
+  color: #fff;
+}
+.btn-primary:hover {
+  background-color: #358878;
+}
+
+.btn-secondary {
+  background-color: #405158;
+  color: #fff;
+}
+.btn-secondary:hover {
+  background-color: #5e7781;
+}
+
+.btn-dark {
+  background-color: #444;
+  color: #fff;
+}
+.btn-dark:hover {
+  background-color: #555;
+}
+
+.btn-danger {
+  background-color: #B33A3A;
+  color: #fff;
+}
+.btn-danger:hover {
+  background-color: #D94B4B;
+}
+
+.btn-success {
+  background-color: #2b7a3f;
+  color: #fff;
+}
+.btn-success:hover {
+  background-color: #3f9a56;
+}
+
+.btn-info {
+  background-color: #405158;
+  color: #fff;
+}
+.btn-info:hover {
+  background-color: #358878;
+}
+
+.btn-outline-light{
+  background-color: #B33A3A;
+}
+
+.btn-outline-light:hover{
+  background-color: #D94B4B;
+}
+
+/* TABLES */
+.table {
+  color: #ffffff;
+  background-color: #2e2e2e;
+}
+
+.table thead tr {
+  background-color: #353535;
+}
+
+.table td,
+.table th {
+  color: #ffffff !important;
+}
+
+.table-bordered td,
+.table-bordered th {
+  border-color: #555 !important;
+}
+
+/* LIST GROUPS */
+.list-group-item {
+  background-color: #2e2e2e !important;
+  color: #fff !important;
+  border: 1px solid #555 !important;
+}
+
+/* ALERTS */
+.alert-info {
+  background-color: #3c3c3c;
+  color: #fff;
+  border: 1px solid #555;
+}
+
+/* NAVBAR CUSTOM STYLES */
+.navbar-custom {
+  background: linear-gradient(135deg, #2B6F63, #358878);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  padding: 0.75rem 1rem;
+}
+
+.navbar-custom .navbar-brand {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #ffffff !important;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.navbar-custom .navbar-toggler {
+  border: none;
+  /* Same gradient background for consistency */
+  background: linear-gradient(135deg, #2B6F63, #358878);
+}
+
+.navbar-custom .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255,255,255,0.8)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+.navbar-custom .nav-link {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff !important;
+  margin-right: 1rem;
+  transition: color 0.2s ease-in-out;
+}
+
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link:focus {
+  color: #e0e0e0 !important;
+}
+
+/* Button Outline (used for login/logout) */
+.btn-outline-light {
+  border-color: #ffffff;
+  color: #ffffff;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-outline-light:hover {
+  color: #2B6F63;
+  border-color: #ffffff;
+}
+
+/* Custom Modal Styles */
+.modal-content {
+  background: linear-gradient(135deg, #3c3c3c, #2b2b2f);
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header,
+.modal-footer {
+  border: none;
+}
+
+.modal-title {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-close {
+  filter: invert(1); /* Makes the close icon white */
+}
+
+/* Optional: Adjust the modal body padding */
+.modal-body {
+  padding: 1.5rem;
+}
+
+.custom-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  justify-content: center;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+.custom-modal-header .modal-title {
+  text-align: center;
+  flex: 1;
+  margin: 0 auto;
+}
+
+.card-header {
+  background-color: #3c3c3c;
+  border: none;
+  border-radius: 0.3rem;
+  margin-bottom: 0.25rem;
+}
+.section-card {
+  background-color: #2e2e2e;
+  border: none;
+  border-radius: 0.3rem;
+  margin-bottom: 1rem;
+}
+.section-card .card-body {
+  padding: 0.1rem 1rem;
+}
+.section-card .card-title {
+  color: #fff;
+  font-weight: bold;
+  margin: 0;
+}

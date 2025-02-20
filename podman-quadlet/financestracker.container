@@ -1,0 +1,20 @@
+[Unit]
+Description=Finances Tracker Quadlet
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=ghcr.io/sudo-kraken/finances-tracker:latest
+ContainerName=finances-tracker
+HostName=finances-tracker
+
+Environment=SECRET_KEY=Character4-Pleasant-Loss-Power-Once-!
+
+Volume=finances-tracker-db:/app/db:z
+
+PublishPort=7070:7070

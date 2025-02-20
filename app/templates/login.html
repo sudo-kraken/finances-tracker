@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Login - Finance Tracker{% endblock %}
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+  <div class="card form-card p-4" style="max-width: 400px; width: 100%;">
+    <h3 class="mb-4 text-center" style="color: #ddd;">Login</h3>
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div class="mb-3">
+        {{ form.username.label(class="form-label") }}
+        {{ form.username(class="form-control") }}
+      </div>
+      <div class="mb-3">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control") }}
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mb-3">
+        {{ form.submit.label.text }}
+      </button>
+    </form>
+    <div class="text-center">
+      <small style="color: #aaa;">Don't have an account?</small>
+      <br>
+      <a href="{{ url_for('main.register') }}" class="btn btn-secondary btn-sm mt-2">Register</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

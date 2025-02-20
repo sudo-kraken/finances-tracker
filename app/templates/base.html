@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Finance Tracker{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <!-- Font Awesome (for icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container">
+      <!-- Left: Brand -->
+      <a class="navbar-brand" href="{{ url_for('main.months') }}">Finance Tracker</a>
+      <!-- Toggler for mobile -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
+              aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <!-- Right: Nav Items -->
+      <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
+        <ul class="navbar-nav">
+          {% if current_user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link btn btn-outline-light me-2" href="{{ url_for('main.logout') }}">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </li>
+          {% else %}
+          <li class="nav-item">
+            <a class="nav-link btn btn-outline-light me-2" href="{{ url_for('main.login') }}">
+              <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-5 pt-4">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-info auto-dismiss" role="alert">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        var alerts = document.getElementsByClassName('auto-dismiss');
+        // Loop backwards because the HTMLCollection is live.
+        for (var i = alerts.length - 1; i >= 0; i--) {
+          alerts[i].parentNode.removeChild(alerts[i]);
+        }
+      }, 5000);
+    });
+  </script>  
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script>
+  // Attach the toggle function to the window object so it is globally available
+  window.toggleAccountControls = function(id) {
+    const controls = document.getElementById(id);
+    if (!controls) {
+      console.log("No controls found for id: " + id);
+      return;
+    }
+    if (controls.style.display === "none" || controls.style.display === "") {
+      controls.style.display = "block";
+    } else {
+      controls.style.display = "none";
+    }
+  };
+
+  // Other code (draggable/resizable logic) can follow here...
+</script>
+{% endblock %}
+
+</body>
+</html>

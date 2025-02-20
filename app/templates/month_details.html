@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+{% block title %}Month: {{ month.name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Month: {{ month.name }}</h2>
+  <div class="mb-3">
+    <a href="{{ url_for('main.months') }}" class="btn btn-secondary">Back to Months</a>
+    <form method="post" action="{{ url_for('main.duplicate_month', month_id=month.id) }}" style="display:inline;">
+      <button type="submit" class="btn btn-dark">Duplicate Month</button>
+    </form>
+    <!-- Trigger modal for editing month -->
+    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#editMonthModal">
+      Rename Month
+    </button>
+    <form method="post" action="{{ url_for('main.delete_month', month_id=month.id) }}" style="display:inline;" onsubmit="return confirm('Delete this month?');">
+      <button type="submit" class="btn btn-danger">Delete Month</button>
+    </form>
+  </div>
+  
+  <!-- Modal for Editing Month -->
+  <div class="modal fade" id="editMonthModal" tabindex="-1" aria-labelledby="editMonthModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: #3c3c3c; color: #fff;">
+        <div class="modal-header custom-modal-header">
+          <h5 class="modal-title text-center" id="editMonthModalLabel">Edit Month: {{ month.name }}</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form method="post" action="{{ url_for('main.edit_month', month_id=month.id) }}">
+            {{ month_edit_form.hidden_tag() }}
+            <div class="mb-3">
+              {{ month_edit_form.name.label(class="form-label") }}
+              {{ month_edit_form.name(class="form-control") }}
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Save</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add New Account Form -->
+  <div class="form-card">
+    <h3>Add New Account</h3>
+    <form method="post">
+      {{ account_form.hidden_tag() }}
+      <div class="mb-3">
+        {{ account_form.name.label(class="form-label") }}
+        {{ account_form.name(class="form-control") }}
+      </div>
+      <button name="account-submit" type="submit" class="btn btn-primary">
+        {{ account_form.submit.label.text }}
+      </button>
+    </form>
+  </div>
+  
+  <!-- Account Canvas -->
+  <div class="account-canvas" style="position: relative; width: 100%; height: 1200px;">
+    {% for account in accounts %}
+      <div class="account-card card form-card"
+           id="account-{{ account.id }}"
+           style="position:absolute; width:{{ account.width }}px; height:{{ account.height }}px; transform:translate({{ account.pos_x }}px, {{ account.pos_y }}px); overflow:hidden;"
+           data-x="{{ account.pos_x }}"
+           data-y="{{ account.pos_y }}">
+        <div class="card-header text-center">
+          <!-- Clicking the account name toggles the hidden controls -->
+          <h4 class="account-name" style="cursor:pointer;" onclick="toggleAccountControls('controls-{{ account.id }}')">
+            {{ account.name }}
+          </h4>
+        </div>
+        <!-- Hidden controls for account editing -->
+        <div id="controls-{{ account.id }}" class="account-controls" style="display: none; text-align: center;">
+          <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editAccountModal{{ account.id }}">
+            Edit
+          </button>
+        </div>
+        
+        <div class="card-body text-center" style="overflow:auto;">
+          <!-- BILLS SECTION -->
+          <div class="card section-card">
+            <div class="card-body text-center">
+              <h5 class="card-title mb-0">Bills</h5>
+            </div>
+          </div>
+          <table class="table table-sm table-bordered">
+            <thead style="background-color: #353535;">
+              <tr>
+                <th>Name</th>
+                <th>Owner</th>
+                <th>Due</th>
+                <th>Cat</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set total_bills = account.total_bills %}
+              {% for b in account.bills %}
+                <tr style="background-color: {% if b.is_paid %}#229c79{% else %}inherit{% endif %};">
+                  <td>{{ b.name }}</td>
+                  <td>{{ b.owner }}</td>
+                  <td>
+                    {% if b.due_date %}
+                      {{ b.due_date.strftime("%d/%m/%Y") }}
+                    {% else %}
+                      --
+                    {% endif %}
+                  </td>
+                  <td>{{ b.category or "--" }}</td>
+                  <td>£{{ "%.2f"|format(b.amount) }}</td>
+                  <td>
+                    <!-- Trigger modal for editing bill -->
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editBillModal{{ b.id }}">
+                      Edit
+                    </button>
+                    <form method="post" action="{{ url_for('main.delete_bill', bill_id=b.id) }}" style="display:inline;" onsubmit="return confirm('Delete this bill?');">
+                      <button type="submit" class="btn btn-danger btn-sm">Del</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+              <tr style="background-color: #2b2b2b;">
+                <td colspan="4"><strong>Total Bills</strong></td>
+                <td colspan="2"><strong>£{{ "%.2f"|format(total_bills) }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <!-- INCOMES SECTION -->
+          <div class="card section-card">
+            <div class="card-body text-center">
+              <h5 class="card-title mb-0">Incomes</h5>
+            </div>
+          </div>
+          <table class="table table-sm table-bordered">
+            <thead style="background-color: #353535;">
+              <tr>
+                <th>Name</th>
+                <th>Contributor</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set total_incomes = account.total_incomes %}
+              {% for i in account.incomes %}
+                <tr>
+                  <td>{{ i.name }}</td>
+                  <td>{{ i.contributor }}</td>
+                  <td>£{{ "%.2f"|format(i.amount) }}</td>
+                  <td>
+                    <!-- Trigger modal for editing income -->
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editIncomeModal{{ i.id }}">
+                      Edit
+                    </button>
+                    <form method="post" action="{{ url_for('main.delete_income', income_id=i.id) }}" style="display:inline;" onsubmit="return confirm('Delete this income?');">
+                      <button type="submit" class="btn btn-danger btn-sm">Del</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+              <tr style="background-color: #2b2b2b;">
+                <td colspan="2"><strong>Total Incomes</strong></td>
+                <td colspan="2"><strong>£{{ "%.2f"|format(total_incomes) }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <!-- REMAINDER SECTION -->
+          <div class="card section-card">
+            <div class="card-body text-center">
+              {% set remainder = account.remainder %}
+              <h5 class="card-title mb-0">
+                Remainder: <span class="{% if remainder < 0 %}text-danger{% else %}text-success{% endif %}">
+                  £{{ "%.2f"|format(remainder) }}
+                </span>
+              </h5>
+            </div>
+          </div>
+                    
+          <!-- Button Group for Adding Bill and Adding Income -->
+          <div class="mt-3">
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#addBillModal{{ account.id }}">
+                Add Bill
+              </button>
+              <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addIncomeModal{{ account.id }}">
+                Add Income
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal for Editing Account -->
+      <div class="modal fade" id="editAccountModal{{ account.id }}" tabindex="-1" aria-labelledby="editAccountModalLabel{{ account.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="background-color: #3c3c3c; color: #fff;">
+            <div class="modal-header custom-modal-header">
+              <h5 class="modal-title text-center" id="editAccountModalLabel{{ account.id }}">Edit Account</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <!-- Edit form -->
+              <form method="post" action="{{ url_for('main.edit_account', account_id=account.id) }}">
+                {{ account_edit_form.hidden_tag() }}
+                <div class="mb-3">
+                  {{ account_edit_form.name.label(class="form-label") }}
+                  {{ account_edit_form.name(class="form-control", value=account.name) }}
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+                </div>
+              </form>
+              <!-- Delete form within the same modal -->
+              <div class="modal-footer">
+                <form method="post" action="{{ url_for('main.delete_account', account_id=account.id) }}" onsubmit="return confirm('Delete this account?');">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal for Editing Bill -->
+      {% for b in account.bills %}
+        <div class="modal fade" id="editBillModal{{ b.id }}" tabindex="-1" aria-labelledby="editBillModalLabel{{ b.id }}" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background-color: #3c3c3c; color: #fff;">
+              <div class="modal-header custom-modal-header">
+                <h5 class="modal-title text-center" id="editBillModalLabel{{ b.id }}">Edit Bill</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form method="post" action="{{ url_for('main.edit_bill', bill_id=b.id) }}">
+                  {{ bill_edit_form.hidden_tag() }}
+                  <input type="hidden" name="bill_id" value="{{ b.id }}">
+                  <div class="mb-3">
+                    {{ bill_edit_form.name.label(class="form-label") }}
+                    {{ bill_edit_form.name(class="form-control", value=b.name) }}
+                  </div>
+                  <div class="mb-3">
+                    {{ bill_edit_form.owner.label(class="form-label") }}
+                    {{ bill_edit_form.owner(class="form-control", value=b.owner) }}
+                  </div>
+                  <div class="mb-3">
+                    {{ bill_edit_form.amount.label(class="form-label") }}
+                    {{ bill_edit_form.amount(class="form-control", value=b.amount) }}
+                  </div>
+                  <div class="mb-3">
+                    {{ bill_edit_form.due_date.label(class="form-label") }}
+                    {{ bill_edit_form.due_date(class="form-control", value=b.due_date.strftime("%Y-%m-%d") if b.due_date else "") }}
+                  </div>
+                  <div class="mb-3">
+                    {{ bill_edit_form.category.label(class="form-label") }}
+                    {{ bill_edit_form.category(class="form-control", value=b.category) }}
+                  </div>
+                  <div class="form-check mb-3">
+                    {{ bill_edit_form.is_paid(class="form-check-input", checked="checked" if b.is_paid else false) }}
+                    {{ bill_edit_form.is_paid.label(class="form-check-label") }}
+                  </div>
+                  <div class="form-check mb-3">
+                    {{ bill_edit_form.transfer(class="form-check-input", checked="checked" if b.transfer else false) }}
+                    {{ bill_edit_form.transfer.label(class="form-check-label") }}
+                  </div>
+                  <div class="mb-3">
+                    {{ bill_edit_form.destination_account.label(class="form-label") }}
+                    {{ bill_edit_form.destination_account(class="form-select", value=b.destination_account) }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button name="bill-edit-submit" type="submit" class="btn btn-primary btn-sm">Submit</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      
+      <!-- Modal for Editing Income -->
+      {% for i in account.incomes %}
+        <div class="modal fade" id="editIncomeModal{{ i.id }}" tabindex="-1" aria-labelledby="editIncomeModalLabel{{ i.id }}" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background-color: #3c3c3c; color: #fff;">
+              <div class="modal-header custom-modal-header">
+                <h5 class="modal-title text-center" id="editIncomeModalLabel{{ i.id }}">Edit Income</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form method="post" action="{{ url_for('main.edit_income', income_id=i.id) }}">
+                  {{ income_edit_form.hidden_tag() }}
+                  <input type="hidden" name="income_id" value="{{ i.id }}">
+                  <div class="mb-3">
+                    {{ income_edit_form.name.label(class="form-label") }}
+                    {{ income_edit_form.name(class="form-control", value=i.name) }}
+                  </div>
+                  <div class="mb-3">
+                    {{ income_edit_form.contributor.label(class="form-label") }}
+                    {{ income_edit_form.contributor(class="form-control", value=i.contributor) }}
+                  </div>
+                  <div class="mb-3">
+                    {{ income_edit_form.amount.label(class="form-label") }}
+                    {{ income_edit_form.amount(class="form-control", value=i.amount) }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button name="income-edit-submit" type="submit" class="btn btn-primary btn-sm">Submit</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      
+      <!-- Modal for Adding Bill -->
+      <div class="modal fade" id="addBillModal{{ account.id }}" tabindex="-1" aria-labelledby="addBillModalLabel{{ account.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="background-color: #3c3c3c; color: #fff;">
+            <div class="modal-header custom-modal-header">
+              <h5 class="modal-title text-center" id="addBillModalLabel{{ account.id }}">Add Bill</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form method="post" action="">
+                {{ bill_form.hidden_tag() }}
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+                <div class="mb-2">
+                  {{ bill_form.name.label(class="form-label") }}
+                  {{ bill_form.name(class="form-control") }}
+                </div>
+                <div class="mb-2">
+                  {{ bill_form.owner.label(class="form-label") }}
+                  {{ bill_form.owner(class="form-control") }}
+                </div>
+                <div class="mb-2">
+                  {{ bill_form.amount.label(class="form-label") }}
+                  {{ bill_form.amount(class="form-control") }}
+                </div>
+                <div class="mb-2">
+                  {{ bill_form.due_date.label(class="form-label") }}
+                  {{ bill_form.due_date(class="form-control") }}
+                </div>
+                <div class="mb-2">
+                  {{ bill_form.category.label(class="form-label") }}
+                  {{ bill_form.category(class="form-control") }}
+                </div>
+                <div class="form-check mb-2">
+                  {{ bill_form.is_paid(class="form-check-input") }}
+                  {{ bill_form.is_paid.label(class="form-check-label") }}
+                </div>
+                <div class="form-check mb-2">
+                  {{ bill_form.transfer(class="form-check-input") }}
+                  {{ bill_form.transfer.label(class="form-check-label") }}
+                </div>
+                <div class="mb-2">
+                  {{ bill_form.destination_account.label(class="form-label") }}
+                  {{ bill_form.destination_account(class="form-select") }}
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-dark btn-sm" data-bs-dismiss="modal">Close</button>
+                  <button name="bill-submit" type="submit" class="btn btn-primary btn-sm">
+                    {{ bill_form.submit.label.text }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal for Adding Income -->
+      <div class="modal fade" id="addIncomeModal{{ account.id }}" tabindex="-1" aria-labelledby="addIncomeModalLabel{{ account.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content" style="background-color: #3c3c3c; color: #fff;">
+            <div class="modal-header custom-modal-header">
+              <h5 class="modal-title text-center" id="addIncomeModalLabel{{ account.id }}">Add Income</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form method="post" action="">
+                {{ income_form.hidden_tag() }}
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+                <div class="mb-2">
+                  {{ income_form.name.label(class="form-label") }}
+                  {{ income_form.name(class="form-control") }}
+                </div>
+                <div class="mb-2">
+                  {{ income_form.contributor.label(class="form-label") }}
+                  {{ income_form.contributor(class="form-control") }}
+                </div>
+                <div class="mb-2">
+                  {{ income_form.amount.label(class="form-label") }}
+                  {{ income_form.amount(class="form-control") }}
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-dark btn-sm" data-bs-dismiss="modal">Close</button>
+                  <button name="income-submit" type="submit" class="btn btn-success btn-sm">Submit</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<script>
+// Global toggle function for account controls
+window.toggleAccountControls = function(id) {
+  const controls = document.getElementById(id);
+  if (controls.style.display === "none" || controls.style.display === "") {
+    controls.style.display = "block";
+  } else {
+    controls.style.display = "none";
+  }
+};
+
+interact('.account-card')
+  .draggable({
+    inertia: true,
+    modifiers: [
+      interact.modifiers.snap({
+        targets: [interact.createSnapGrid({ x: 50, y: 50 })],
+        range: 10
+      })
+    ],
+    listeners: {
+      move (event) {
+        const target = event.target;
+        let x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+        let y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+        target.style.transform = `translate(${x}px, ${y}px)`;
+        target.setAttribute('data-x', x);
+        target.setAttribute('data-y', y);
+      },
+      end (event) {
+        const target = event.target;
+        const accountId = target.id.split('-')[1];
+        let x = parseInt(target.getAttribute('data-x')) || 0;
+        let y = parseInt(target.getAttribute('data-y')) || 0;
+        let w = parseInt(target.style.width) || 300;
+        let h = parseInt(target.style.height) || 250;
+        fetch(`/account/${accountId}/update_position`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ x, y, width: w, height: h })
+        })
+        .then(res => {
+          if (!res.ok) {
+            return res.json().then(data => {
+              if (data.error) alert(data.error);
+              // Reset if saving fails
+              target.setAttribute('data-x', 0);
+              target.setAttribute('data-y', 0);
+              target.style.transform = 'translate(0,0)';
+              target.style.width = '300px';
+              target.style.height = '250px';
+            });
+          }
+        })
+        .catch(err => console.error(err));
+      }
+    }
+  })
+  .resizable({
+    edges: { left: false, right: true, bottom: true, top: false },
+    inertia: true,
+    modifiers: [
+      interact.modifiers.snapSize({
+        targets: [interact.createSnapGrid({ x: 50, y: 50 })],
+        range: 10
+      })
+    ],
+    listeners: {
+      move (event) {
+        const target = event.target;
+        let x = parseFloat(target.getAttribute('data-x')) || 0;
+        let y = parseFloat(target.getAttribute('data-y')) || 0;
+        target.style.width  = event.rect.width + 'px';
+        target.style.height = event.rect.height + 'px';
+        x += event.deltaRect.left;
+        y += event.deltaRect.top;
+        target.style.transform = `translate(${x}px, ${y}px)`;
+        target.setAttribute('data-x', x);
+        target.setAttribute('data-y', y);
+      },
+      end (event) {
+        const target = event.target;
+        const accountId = target.id.split('-')[1];
+        let x = parseInt(target.getAttribute('data-x')) || 0;
+        let y = parseInt(target.getAttribute('data-y')) || 0;
+        let w = parseInt(target.style.width) || 300;
+        let h = parseInt(target.style.height) || 250;
+        fetch(`/account/${accountId}/update_position`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ x, y, width: w, height: h })
+        })
+        .then(res => {
+          if (!res.ok) {
+            return res.json().then(data => {
+              if (data.error) alert(data.error);
+              // Reset if saving fails
+              target.setAttribute('data-x', 0);
+              target.setAttribute('data-y', 0);
+              target.style.transform = 'translate(0,0)';
+              target.style.width = '300px';
+              target.style.height = '250px';
+            });
+          }
+        })
+        .catch(err => console.error(err));
+      }
+    }
+  });
+</script>
+{% endblock %}

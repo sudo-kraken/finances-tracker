@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Months - Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4 text-center" style="color: #ddd;">Months</h2>
+
+  <div class="form-card mb-4 p-4" style="max-width: 600px; margin: 0 auto;">
+    <form method="post" class="text-center" style="max-width: 400px; margin: 0 auto;">
+      {{ form.hidden_tag() }}
+      <div class="mb-3">
+        {{ form.name(class="form-control", placeholder="e.g. February 2025") }}
+      </div>
+      <button type="submit" class="btn btn-primary">
+        {{ form.submit.label.text }}
+      </button>
+    </form>
+  </div>
+
+  <div class="card form-card p-4" style="max-width: 600px; margin: 0 auto;">
+    <ul class="list-group">
+      {% for m in months %}
+      <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: #2e2e2e; border: 1px solid #444;">
+        <form method="get" action="{{ url_for('main.month_details', month_id=m.id) }}" style="display:inline;">
+          <button type="submit" class="btn btn-info btn-sm me-2">
+            {{ m.name }}
+          </button>
+        </form>
+        <div>
+          <form method="post" action="{{ url_for('main.duplicate_month', month_id=m.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-dark btn-sm">Duplicate</button>
+          </form>
+          <!-- Instead of linking to a separate page, trigger the edit modal -->
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editMonthModal{{ m.id }}">
+            Edit
+          </button>
+          <form method="post" action="{{ url_for('main.delete_month', month_id=m.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this month?');">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        </div>
+      </li>
+      {% else %}
+      <li class="list-group-item" style="background-color: #2e2e2e; border: 1px solid #444;">
+        No months created yet.
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Modals for Editing Months -->
+  {% for m in months %}
+  <div class="modal fade" id="editMonthModal{{ m.id }}" tabindex="-1" aria-labelledby="editMonthModalLabel{{ m.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background-color: #3c3c3c; color: #fff;">
+        <div class="modal-header custom-modal-header">
+          <h5 class="modal-title text-center" id="editMonthModalLabel{{ m.id }}">Edit Month: {{ m.name }}</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form method="post" action="{{ url_for('main.edit_month', month_id=m.id) }}">
+            {{ month_edit_form.hidden_tag() }}
+            <div class="mb-3">
+              {{ month_edit_form.name.label(class="form-label") }}
+              {{ month_edit_form.name(class="form-control", value=m.name) }}
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Save</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
