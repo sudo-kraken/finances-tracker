@@ -414,7 +414,7 @@ def edit_income(income_id):
 def health():
     try:
         # Test database connection
-        db.session.execute(db.text('SELECT 1'))
+        db.session.execute(db.text("SELECT 1"))
         return {"status": "healthy"}, 200
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}, 500
