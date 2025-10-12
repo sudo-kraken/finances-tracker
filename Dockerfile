@@ -2,6 +2,7 @@ FROM ghcr.io/astral-sh/uv:0.9-python3.13-bookworm-slim@sha256:7072fbb9cf84e6b76b
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV DATABASE_FOLDER=/app/db
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \
