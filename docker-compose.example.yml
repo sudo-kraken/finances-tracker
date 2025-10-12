@@ -1,4 +1,3 @@
-
 version: '3.9'
 
 services:
@@ -9,5 +8,5 @@ services:
     environment:
       SECRET_KEY: "SECRET_KEY_HERE"
     volumes:
-      - ./data:/app/db
+      - ./data:/app/app/db
     restart: unless-stopped
