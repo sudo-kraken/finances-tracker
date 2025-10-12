@@ -1,8 +1,9 @@
 # models.py
-from extensions import db, login_manager
+from .extensions import db, login_manager
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -11,13 +12,15 @@ class User(UserMixin, db.Model):
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-        
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 class Month(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,6 +29,7 @@ class Month(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     accounts = db.relationship("Account", backref="month", lazy=True, cascade="all, delete-orphan")
+
 
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -40,13 +44,13 @@ class Account(db.Model):
     bills = db.relationship("Bill", backref="account", lazy=True, cascade="all, delete-orphan")
     incomes = db.relationship("Income", backref="account", lazy=True, cascade="all, delete-orphan")
 
+
 class Bill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey("account.id"), nullable=False)
     linked_income_id = db.Column(db.Integer, db.ForeignKey("income.id"), nullable=True)
     name = db.Column(db.String(100), nullable=False)
-    amount = db.Column(db.Numeric(12,2), nullable=False, default=0)
-    due_date = db.Column(db.Date, nullable=True)
+    amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
     category = db.Column(db.String(50), default="general")
     is_paid = db.Column(db.Boolean, default=False)
     owner = db.Column(db.String(50), default="Shared")
@@ -54,10 +58,11 @@ class Bill(db.Model):
 
     linked_income = db.relationship("Income", foreign_keys=[linked_income_id], uselist=False)
 
+
 class Income(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey("account.id"), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    amount = db.Column(db.Numeric(12,2), nullable=False, default=0)
+    amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
     contributor = db.Column(db.String(50), default="Unknown")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

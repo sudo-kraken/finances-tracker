@@ -1,0 +1,13 @@
+
+version: '3.9'
+
+services:
+  finances-tracker:
+    image: ghcr.io/sudo-kraken/finances-tracker:latest
+    ports:
+      - "7070:7070"
+    environment:
+      SECRET_KEY: "SECRET_KEY_HERE"
+    volumes:
+      - ./data:/app/db
+    restart: unless-stopped

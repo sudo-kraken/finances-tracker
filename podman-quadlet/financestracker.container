@@ -10,10 +10,11 @@ WantedBy=default.target
 
 [Container]
 Image=ghcr.io/sudo-kraken/finances-tracker:latest
+Pull=newer
 ContainerName=finances-tracker
 HostName=finances-tracker
 
-Environment=SECRET_KEY=Character4-Pleasant-Loss-Power-Once-!
+Environment=SECRET_KEY=
 
 Volume=finances-tracker-db:/app/db:z
 

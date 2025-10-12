@@ -1,21 +1,20 @@
-# Use an official Python runtime as a parent image
-FROM python:3.13-slim
+FROM ghcr.io/astral-sh/uv:0.9-python3.13-bookworm-slim@sha256:7072fbb9cf84e6b76bee43905c27a1cf4afa48bfa49de3cb2b57f748ada6cc10
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set the working directory in the container
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy the application files
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --frozen --no-dev --no-install-project
+
 COPY app /app
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Expose the port the app runs on
 EXPOSE 7070
 
-# Define the command to run the application using Gunicorn
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:7070", "app:app"]
+CMD ["uv", "run", "--no-dev", "gunicorn", "-w", "2", "-b", "0.0.0.0:7070", "app:app"]

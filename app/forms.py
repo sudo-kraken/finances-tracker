@@ -1,11 +1,9 @@
 import re
 from decimal import Decimal
-from wtforms import (
-    StringField, DecimalField, SubmitField, BooleanField,
-    DateField, SelectField, PasswordField
-)
+from wtforms import StringField, DecimalField, SubmitField, BooleanField, DateField, SelectField, PasswordField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, Optional
 from flask_wtf import FlaskForm
+
 
 class RegistrationForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired(), Length(min=3, max=64)])
@@ -13,18 +11,22 @@ class RegistrationForm(FlaskForm):
     confirm_password = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo("password")])
     submit = SubmitField("Register")
 
+
 class LoginForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Login")
 
+
 class MonthForm(FlaskForm):
     name = StringField("Month Name", validators=[DataRequired()])
     submit = SubmitField("Create Month")
 
+
 class AccountForm(FlaskForm):
     name = StringField("Account Name", validators=[DataRequired()])
     submit = SubmitField("Save Account")
+
 
 def destination_coerce(val):
     """
@@ -36,6 +38,7 @@ def destination_coerce(val):
         return 0
     return int(val)
 
+
 class BillForm(FlaskForm):
     name = StringField("Bill Name", validators=[DataRequired()])
     amount = DecimalField("Amount", validators=[DataRequired()])
@@ -45,10 +48,7 @@ class BillForm(FlaskForm):
     is_paid = BooleanField("Mark as Paid?")
     transfer = BooleanField("Is Transfer?")
     destination_account = SelectField(
-        "Destination Account",
-        choices=[],
-        coerce=destination_coerce,
-        validators=[Optional()]
+        "Destination Account", choices=[], coerce=destination_coerce, validators=[Optional()]
     )
     submit = SubmitField("Save Bill")
 
@@ -59,6 +59,7 @@ class BillForm(FlaskForm):
             field.data = Decimal(cleaned)
         except:
             raise ValidationError("Please enter a valid numeric amount (e.g. 2503.50).")
+
 
 class IncomeForm(FlaskForm):
     name = StringField("Income Name", validators=[DataRequired()])
