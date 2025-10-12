@@ -19,7 +19,7 @@ A small Flask application for tracking monthly finances. I originally built this
 
 ## Requirements
 
-- Python 3.9 or newer
+- Python 3.10 or newer
 - uv for dependency management
 - SQLite (bundled with Python’s sqlite3)
 
