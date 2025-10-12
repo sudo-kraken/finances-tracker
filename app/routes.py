@@ -251,7 +251,7 @@ def duplicate_month(month_id):
 @bp.route("/months/<int:month_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_month(month_id):
-    from forms import MonthForm
+    from .forms import MonthForm
 
     month = Month.query.get_or_404(month_id)
     form = MonthForm(obj=month)
@@ -277,7 +277,7 @@ def delete_account(account_id):
 @bp.route("/account/<int:account_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_account(account_id):
-    from forms import AccountForm
+    from .forms import AccountForm
 
     account = Account.query.get_or_404(account_id)
     form = AccountForm(obj=account)
@@ -307,7 +307,7 @@ def delete_bill(bill_id):
 @bp.route("/bill/<int:bill_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_bill(bill_id):
-    from forms import BillForm
+    from .forms import BillForm
 
     bill = Bill.query.get_or_404(bill_id)
     form = BillForm(obj=bill)
@@ -396,7 +396,7 @@ def delete_income(income_id):
 @bp.route("/income/<int:income_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_income(income_id):
-    from forms import IncomeForm
+    from .forms import IncomeForm
 
     income = Income.query.get_or_404(income_id)
     form = IncomeForm(obj=income)
@@ -408,3 +408,13 @@ def edit_income(income_id):
         flash("Income updated.")
         return redirect(url_for("main.month_details", month_id=income.account.month_id))
     return render_template("edit_income.html", form=form, income=income)
+
+
+@bp.route("/health")
+def health():
+    try:
+        # Test database connection
+        db.session.execute(db.text('SELECT 1'))
+        return {"status": "healthy"}, 200
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}, 500
