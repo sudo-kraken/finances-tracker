@@ -1,33 +1,51 @@
 # Finances Tracker
 
-Small Flask application for tracking monthly finances. SQLite by default, easy to switch to any SQLAlchemy database.
+A small Flask application for tracking monthly finances. SQLite is used by default and it can be switched to any SQLAlchemy supported database. Built with uv and designed for local or containerised runs.
+
+## Overview
+
+Create an account, sign in, and manage accounts, bills and incomes within monthly workspaces. The app uses Decimal handling for money values and provides a `/health` endpoint for orchestration.
+
+## Architecture at a glance
+
+- Flask app factory with `app:app` WSGI target
+- SQLAlchemy for persistence
+- Flask-Login for session management
+- Health endpoint `GET /health`
 
 ## Features
-- Username and password sign in via Flask-Login
+
+- User sign in via Flask-Login
 - Monthly workspaces with accounts, bills and incomes
-- Proper Decimal handling
-- Clean `app:app` entrypoint for Flask and Gunicorn
-- `/health` endpoint
-- Reproducible setup with uv, optional Docker
-- Tests with high coverage
+- Accurate Decimal handling for money values
+- SQLite by default with SQLAlchemy URI override
+- `/health` endpoint for liveness checks
+- Reproducible local development with uv
+- Prebuilt container image on GHCR
 
-## Requirements
-- Python 3.13 with [uv](https://docs.astral.sh/uv/)  # set to 3.10 if you prefer to keep current target
-- Docker optional
+## Prerequisites
 
-## Quick start with uv
+- [Docker](https://www.docker.com/)
+- (Alternatively) [uv](https://docs.astral.sh/uv/) and Python 3.13 for local development
+
+## Quick start
+
+Local development with uv
+
 ```bash
 uv sync --all-extras
 uv run flask --app app:app run --host 0.0.0.0 --port ${PORT:-7070}
-# or Gunicorn
-uv run --no-dev gunicorn -w ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT:-7070} app:app
 ```
 
 ## Docker
-```bash
-docker run --rm -e PORT=7070 -p 7070:7070 ghcr.io/sudo-kraken/finances-tracker:latest
 
-# For compose use see the repo example
+Pull and run
+
+```bash
+docker pull ghcr.io/sudo-kraken/finances-tracker:latest
+docker run --rm -p 7070:7070 \
+  -e PORT=7070 \
+  ghcr.io/sudo-kraken/finances-tracker:latest
 ```
 
 ## Configuration
@@ -35,31 +53,47 @@ docker run --rm -e PORT=7070 -p 7070:7070 ghcr.io/sudo-kraken/finances-tracker:l
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | PORT | no | 7070 | Port to bind |
-| WEB_CONCURRENCY | no | 2 | Gunicorn workers |
-| SECRET_KEY | yes in production |  | Flask secret key |
+| WEB_CONCURRENCY | no | 2 | Gunicorn worker processes |
+| SECRET_KEY | yes in production |  | Flask secret key used for sessions |
 | SQLALCHEMY_DATABASE_URI | no | sqlite:///app/db/finances.db | Database URI |
 | FINANCES_TESTING | no | 0 | Enables test configuration |
 
-## Health and readiness
-- `GET /health` returns `{ "ok": true }`.
+`.env` example
 
-## Project layout
+```dotenv
+PORT=7070
+WEB_CONCURRENCY=2
+SECRET_KEY=change-me
+SQLALCHEMY_DATABASE_URI=sqlite:///app/db/finances.db
 ```
-finances-tracker/
-  app/
-  templates/
-  static/
-  Dockerfile
-  pyproject.toml
-  tests/
-```
+
+## Health
+
+- `GET /health` returns `{ "ok": true }`
+
+## Data and backups
+
+- For SQLite, mount a volume to persist `app/db/finances.db` when using Docker.
+- For other databases, use their native backup tooling.
+
+## Production notes
+
+- Always set `SECRET_KEY` in production.
+- If you expose the app on the internet, put it behind a reverse proxy that terminates TLS and sets secure cookies.
 
 ## Development
+
 ```bash
 uv run ruff check --fix .
 uv run ruff format .
 uv run pytest --cov
 ```
+
+## Troubleshooting
+
+- If the app fails to start with a database error, verify `SQLALCHEMY_DATABASE_URI` and that the target directory exists for SQLite.
+- If log output is noisy, adjust the logging level via your process manager or container runtime.
+
 ## Licence
 See [LICENSE](LICENSE)
 
@@ -67,6 +101,7 @@ See [LICENSE](LICENSE)
 See [SECURITY.md](SECURITY.md)
 
 ## Contributing
+Feel free to open issues or submit pull requests if you have suggestions or improvements.
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Support
