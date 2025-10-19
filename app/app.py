@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+
 from flask import Flask
+
 from .config import Config
 from .extensions import db, login_manager
 

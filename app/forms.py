@@ -1,8 +1,9 @@
 import re
-from decimal import Decimal
-from wtforms import StringField, DecimalField, SubmitField, BooleanField, DateField, SelectField, PasswordField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, Optional
+from decimal import Decimal, InvalidOperation
+
 from flask_wtf import FlaskForm
+from wtforms import BooleanField, DateField, DecimalField, PasswordField, SelectField, StringField, SubmitField
+from wtforms.validators import DataRequired, EqualTo, Length, Optional, ValidationError
 
 
 class RegistrationForm(FlaskForm):
@@ -57,8 +58,8 @@ class BillForm(FlaskForm):
         cleaned = re.sub(r"[^\d\.]+", "", raw)
         try:
             field.data = Decimal(cleaned)
-        except:
-            raise ValidationError("Please enter a valid numeric amount (e.g. 2503.50).")
+        except (ValueError, InvalidOperation):
+            raise ValidationError("Please enter a valid numeric amount (e.g. 2503.50).") from None
 
 
 class IncomeForm(FlaskForm):
@@ -72,5 +73,5 @@ class IncomeForm(FlaskForm):
         cleaned = re.sub(r"[^\d\.]+", "", raw)
         try:
             field.data = Decimal(cleaned)
-        except:
-            raise ValidationError("Please enter a valid numeric amount (e.g. 1500.00).")
+        except (ValueError, InvalidOperation):
+            raise ValidationError("Please enter a valid numeric amount (e.g. 1500.00).") from None

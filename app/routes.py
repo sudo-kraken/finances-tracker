@@ -1,10 +1,10 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
-from flask_login import login_required, current_user, login_user, logout_user
-from .forms import RegistrationForm, LoginForm, MonthForm, AccountForm, BillForm, IncomeForm
-from .models import User, Month, Account, Bill, Income
-from .extensions import db
-from decimal import Decimal
 from dateutil.relativedelta import relativedelta
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from flask_login import current_user, login_required, login_user, logout_user
+
+from .extensions import db
+from .forms import AccountForm, BillForm, IncomeForm, LoginForm, MonthForm, RegistrationForm
+from .models import Account, Bill, Income, Month, User
 
 bp = Blueprint("main", __name__)
 
