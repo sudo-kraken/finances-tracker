@@ -10,7 +10,6 @@ def test_config_defaults_importable():
 
 
 def test_db_folder_creation_line_is_executed(monkeypatch):
-    import os
     import app.config as cfg  # type: ignore
 
     # Force the import-time branch that calls os.makedirs

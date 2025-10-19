@@ -1,5 +1,4 @@
 from decimal import Decimal
-import wtforms
 
 
 def test_amount_normalisation_success(app):

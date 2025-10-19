@@ -1,3 +1,4 @@
+import contextlib
 import importlib
 import os
 import sys
@@ -40,7 +41,5 @@ def db(app):
                 _db.session.execute(tbl.delete())
             _db.session.commit()
             # Dispose engine to avoid unclosed DB warnings on Windows
-            try:
+            with contextlib.suppress(Exception):
                 _db.engine.dispose()
-            except Exception:
-                pass

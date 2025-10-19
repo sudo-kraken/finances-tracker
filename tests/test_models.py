@@ -3,7 +3,7 @@ from decimal import Decimal
 
 def test_models_crud_and_relationships(db):
     from app.extensions import db as _db  # type: ignore
-    from app.models import User, Month, Account, Income, Bill  # type: ignore
+    from app.models import Account, Bill, Income, Month, User  # type: ignore
 
     u = User(username="alice")
     u.set_password("secret123")
