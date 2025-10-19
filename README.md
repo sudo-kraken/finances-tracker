@@ -1,6 +1,22 @@
-# Finances Tracker
+<div align="center">
+<img src="https://raw.githubusercontent.com/sudo-kraken/finances-tracker/main/docs/assets/logo.png" align="center" width="144px" height="144px"/>
 
-A small Flask application for tracking monthly finances. SQLite is used by default and it can be switched to any SQLAlchemy supported database. Built with uv and designed for local or containerised runs.
+### Finances Tracker
+
+_A small Flask application for tracking monthly finances. SQLite is used by default and it can be switched to any SQLAlchemy supported database. Built with uv and designed for local or containerised runs._
+
+</div>
+
+<div align="center">
+
+[![Docker](https://img.shields.io/github/v/tag/sudo-kraken/finances-tracker?label=docker&logo=docker&style=for-the-badge)](https://github.com/sudo-kraken/finances-tracker/pkgs/container/finances-tracker) [![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Ffinances-tracker%2Fmain%2Fpyproject.toml&logo=python&logoColor=yellow&color=3776AB&style=for-the-badge)](https://github.com/sudo-kraken/finances-tracker/blob/main/pyproject.toml)
+</div>
+
+<div align="center">
+
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/sudo-kraken/finances-tracker?label=openssf%20scorecard&style=for-the-badge)](https://scorecard.dev/viewer/?uri=github.com/sudo-kraken/finances-tracker)
+
+</div>
 
 ## Overview
 
