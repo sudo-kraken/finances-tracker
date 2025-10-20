@@ -1,10 +1,9 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/sudo-kraken/finances-tracker/main/docs/assets/logo.png" align="center" width="144px" height="144px"/>
+<img src="docs/assets/logo.png" align="center" width="144px" height="144px"/>
 
 ### Finances Tracker
 
 _A small Flask application for tracking monthly finances. SQLite is used by default and it can be switched to any SQLAlchemy supported database. Built with uv and designed for local or containerised runs._
-
 </div>
 
 <div align="center">
@@ -17,6 +16,25 @@ _A small Flask application for tracking monthly finances. SQLite is used by defa
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/sudo-kraken/finances-tracker?label=openssf%20scorecard&style=for-the-badge)](https://scorecard.dev/viewer/?uri=github.com/sudo-kraken/finances-tracker)
 
 </div>
+
+## Contents
+
+- [Overview](#overview)
+- [Architecture at a glance](#architecture-at-a-glance)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Quick start](#quick-start)
+- [Docker](#docker)
+- [Configuration](#configuration)
+- [Health](#health)
+- [Data and backups](#data-and-backups)
+- [Production notes](#production-notes)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [Licence](#licence)
+- [Security](#security)
+- [Contributing](#contributing)
+- [Support](#support)
 
 ## Overview
 
@@ -42,7 +60,7 @@ Create an account, sign in, and manage accounts, bills and incomes within monthl
 ## Prerequisites
 
 - [Docker](https://www.docker.com/)
-- (Alternatively) [uv](https://docs.astral.sh/uv/) and Python 3.13 for local development
+- Alternatively [uv](https://docs.astral.sh/uv/) and Python 3.13 for local development
 
 ## Quick start
 
@@ -95,7 +113,7 @@ SQLALCHEMY_DATABASE_URI=sqlite:///app/db/finances.db
 ## Production notes
 
 - Always set `SECRET_KEY` in production.
-- If you expose the app on the internet, put it behind a reverse proxy that terminates TLS and sets secure cookies.
+- If you expose the app on the internet, place it behind a reverse proxy that terminates TLS and sets secure cookies.
 
 ## Development
 
@@ -111,14 +129,18 @@ uv run pytest --cov
 - If log output is noisy, adjust the logging level via your process manager or container runtime.
 
 ## Licence
-See [LICENSE](LICENSE)
+
+This project is licensed under the MIT Licence. See the [LICENCE](LICENCE) file for details.
 
 ## Security
-See [SECURITY.md](SECURITY.md)
+
+If you discover a security issue, please review and follow the guidance in [SECURITY.md](SECURITY.md), or open a private security-focused issue with minimal details and request a secure contact channel.
 
 ## Contributing
-Feel free to open issues or submit pull requests if you have suggestions or improvements.
+
+Feel free to open issues or submit pull requests if you have suggestions or improvements.  
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Support
-Open an [issue](/../../issues)
+
+Open an [issue](/../../issues) with as much detail as possible, including your environment details and relevant logs or output.
