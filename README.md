@@ -64,6 +64,18 @@ docker run --rm -p 7070:7070 \
   ghcr.io/sudo-kraken/finances-tracker:latest
 ```
 
+## Kubernetes (Helm)
+
+You can deploy the app on Kubernetes using the published Helm chart:
+
+```bash
+helm install finances-tracker oci://ghcr.io/sudo-kraken/helm-charts/finances-tracker \
+  --namespace finances-tracker --create-namespace
+```
+
+By default, the chart generates its own development `SECRET_KEY` and creates a PersistentVolumeClaim for the SQLite database.  
+For production use, override values such as `secret.create=false` and provide your own secret, or switch to an external database via `SQLALCHEMY_DATABASE_URI`.
+
 ## Configuration
 
 | Variable | Required | Default | Description |
