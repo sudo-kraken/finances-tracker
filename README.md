@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/sudo-kraken/finances-tracker/main/docs/assets/logo.png" align="center" width="144px" height="144px"/>
+<img src="docs/assets/logo.png" align="center" width="144px" height="144px"/>
 
 ### Finances Tracker
 
@@ -16,6 +16,13 @@ _A small Flask application for tracking monthly finances. SQLite is used by defa
 
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/sudo-kraken/finances-tracker?label=openssf%20scorecard&style=for-the-badge)](https://scorecard.dev/viewer/?uri=github.com/sudo-kraken/finances-tracker)
 
+</div>
+
+## Demo
+<div align="center">
+  
+![Demo](docs/assets/preview.gif)  
+*Animation shows the basic functionality of the application*
 </div>
 
 ## Overview
