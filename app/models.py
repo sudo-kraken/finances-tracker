@@ -53,6 +53,7 @@ class Bill(db.Model):
     linked_income_id = db.Column(db.Integer, db.ForeignKey("income.id"), nullable=True)
     name = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Numeric(12, 2), nullable=False, default=0)
+    due_date = db.Column(db.Date, nullable=True)
     category = db.Column(db.String(50), default="general")
     is_paid = db.Column(db.Boolean, default=False)
     owner = db.Column(db.String(50), default="Shared")
