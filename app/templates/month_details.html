@@ -265,12 +265,12 @@
                     {{ bill_edit_form.is_paid.label(class="form-check-label") }}
                   </div>
                   <div class="form-check mb-3">
-                    {{ bill_edit_form.transfer(class="form-check-input", checked="checked" if b.transfer else false) }}
+                    {{ bill_edit_form.transfer(class="form-check-input", checked="checked" if b.linked_income else false) }}
                     {{ bill_edit_form.transfer.label(class="form-check-label") }}
                   </div>
                   <div class="mb-3">
                     {{ bill_edit_form.destination_account.label(class="form-label") }}
-                    {{ bill_edit_form.destination_account(class="form-select", value=b.destination_account) }}
+                    {{ bill_edit_form.destination_account(class="form-select", value=b.linked_income.account_id if b.linked_income else 0) }}
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-dark btn-sm" data-bs-dismiss="modal">Close</button>
