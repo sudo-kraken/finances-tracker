@@ -41,7 +41,7 @@ Create an account, sign in, and manage accounts, bills and incomes within monthl
 
 ## Prerequisites
 
-- [Docker](https://www.docker.com/)
+- [Docker](https://www.docker.com/) / [Kubernetes](https://kubernetes.io/)
 - (Alternatively) [uv](https://docs.astral.sh/uv/) and Python 3.13 for local development
 
 ## Quick start
