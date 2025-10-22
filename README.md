@@ -25,6 +25,24 @@ _A small Flask application for tracking monthly finances. SQLite is used by defa
 *Animation shows the basic functionality of the application*
 </div>
 
+## Contents
+
+- [Overview](#overview)
+- [Architecture at a glance](#architecture-at-a-glance)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Quick start](#quick-start)
+- [Docker](#docker)
+- [Configuration](#configuration)
+- [Health](#health)
+- [Production notes](#production-notes)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [Licence](#licence)
+- [Security](#security)
+- [Contributing](#contributing)
+- [Support](#support)
+
 ## Overview
 
 Create an account, sign in, and manage accounts, bills and incomes within monthly workspaces. The app uses Decimal handling for money values and provides a `/health` endpoint for orchestration.
