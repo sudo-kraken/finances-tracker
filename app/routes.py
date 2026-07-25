@@ -248,11 +248,9 @@ def duplicate_month(month_id):
     return redirect(url_for("main.months"))
 
 
-@bp.route("/months/<int:month_id>/edit", methods=["GET", "POST"])
+@bp.route("/months/<int:month_id>/edit", methods=["POST"])
 @login_required
 def edit_month(month_id):
-    from .forms import MonthForm
-
     month = Month.query.get_or_404(month_id)
     form = MonthForm(obj=month)
     if form.validate_on_submit():
@@ -260,7 +258,7 @@ def edit_month(month_id):
         db.session.commit()
         flash("Month updated.")
         return redirect(url_for("main.month_details", month_id=month.id))
-    return render_template("edit_month.html", form=form, month=month)
+    return redirect(url_for("main.month_details", month_id=month.id))
 
 
 @bp.route("/account/<int:account_id>/delete", methods=["POST"])
@@ -274,11 +272,9 @@ def delete_account(account_id):
     return redirect(url_for("main.month_details", month_id=month_id))
 
 
-@bp.route("/account/<int:account_id>/edit", methods=["GET", "POST"])
+@bp.route("/account/<int:account_id>/edit", methods=["POST"])
 @login_required
 def edit_account(account_id):
-    from .forms import AccountForm
-
     account = Account.query.get_or_404(account_id)
     form = AccountForm(obj=account)
     if form.validate_on_submit():
@@ -286,7 +282,7 @@ def edit_account(account_id):
         db.session.commit()
         flash("Account updated.")
         return redirect(url_for("main.month_details", month_id=account.month_id))
-    return render_template("edit_account.html", form=form, account=account)
+    return redirect(url_for("main.month_details", month_id=account.month_id))
 
 
 @bp.route("/bill/<int:bill_id>/delete", methods=["POST"])
@@ -304,11 +300,9 @@ def delete_bill(bill_id):
     return redirect(url_for("main.month_details", month_id=month_id))
 
 
-@bp.route("/bill/<int:bill_id>/edit", methods=["GET", "POST"])
+@bp.route("/bill/<int:bill_id>/edit", methods=["POST"])
 @login_required
 def edit_bill(bill_id):
-    from .forms import BillForm
-
     bill = Bill.query.get_or_404(bill_id)
     form = BillForm(obj=bill)
 
@@ -372,11 +366,7 @@ def edit_bill(bill_id):
 
         flash("Bill updated.")
         return redirect(url_for("main.month_details", month_id=bill.account.month_id))
-    else:
-        print("DEBUG: Bill form did NOT validate.")
-        print("DEBUG: form.errors =", form.errors)
-
-    return render_template("edit_bill.html", form=form, bill=bill)
+    return redirect(url_for("main.month_details", month_id=bill.account.month_id))
 
 
 @bp.route("/income/<int:income_id>/delete", methods=["POST"])
@@ -393,11 +383,9 @@ def delete_income(income_id):
     return redirect(url_for("main.month_details", month_id=month_id))
 
 
-@bp.route("/income/<int:income_id>/edit", methods=["GET", "POST"])
+@bp.route("/income/<int:income_id>/edit", methods=["POST"])
 @login_required
 def edit_income(income_id):
-    from .forms import IncomeForm
-
     income = Income.query.get_or_404(income_id)
     form = IncomeForm(obj=income)
     if form.validate_on_submit():
@@ -407,7 +395,7 @@ def edit_income(income_id):
         db.session.commit()
         flash("Income updated.")
         return redirect(url_for("main.month_details", month_id=income.account.month_id))
-    return render_template("edit_income.html", form=form, income=income)
+    return redirect(url_for("main.month_details", month_id=income.account.month_id))
 
 
 @bp.route("/health")

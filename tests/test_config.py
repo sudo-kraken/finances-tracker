@@ -9,6 +9,17 @@ def test_config_defaults_importable():
     assert hasattr(c, "SQLALCHEMY_DATABASE_URI")
 
 
+def test_config_uses_database_uri_from_environment(monkeypatch):
+    import app.config as cfg  # type: ignore
+
+    with monkeypatch.context() as scoped_monkeypatch:
+        scoped_monkeypatch.setenv("SQLALCHEMY_DATABASE_URI", "sqlite:///custom.db")
+        reloaded = importlib.reload(cfg)
+
+    assert reloaded.Config.SQLALCHEMY_DATABASE_URI == "sqlite:///custom.db"
+    importlib.reload(cfg)
+
+
 def test_db_folder_creation_line_is_executed(monkeypatch):
     import app.config as cfg  # type: ignore
 

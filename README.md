@@ -122,7 +122,7 @@ SQLALCHEMY_DATABASE_URI=sqlite:///app/db/finances.db
 
 ## Health
 
-- `GET /health` returns `{ "ok": true }`
+- `GET /health` returns `{ "status": "healthy" }` when the database connection succeeds.
 
 ## Data and backups
 
