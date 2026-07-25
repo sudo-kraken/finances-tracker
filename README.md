@@ -3,7 +3,7 @@
 
 ### Finances Tracker
 
-_A small Flask application for tracking monthly finances. SQLite is used by default and it can be switched to any SQLAlchemy supported database. Built with uv and designed for local or containerised runs._
+_A small Flask application for tracking monthly finances. Built with SQLite and uv, and designed for local or containerised runs._
 
 </div>
 
@@ -34,6 +34,7 @@ _A small Flask application for tracking monthly finances. SQLite is used by defa
 - [Quick start](#quick-start)
 - [Docker](#docker)
 - [Configuration](#configuration)
+- [Database upgrades](#database-upgrades)
 - [Health](#health)
 - [Production notes](#production-notes)
 - [Development](#development)
@@ -56,10 +57,10 @@ Create an account, sign in, and manage accounts, bills and incomes within monthl
 
 ## Features
 
-- User sign in via Flask-Login
+- Per-user financial workspaces protected by Flask-Login
 - Monthly workspaces with accounts, bills and incomes
 - Accurate Decimal handling for money values
-- SQLite by default with SQLAlchemy URI override
+- Persistent SQLite storage with automatic schema upgrades
 - `/health` endpoint for liveness checks
 - Reproducible local development with uv
 - Prebuilt container image on GHCR
@@ -74,6 +75,7 @@ Create an account, sign in, and manage accounts, bills and incomes within monthl
 Local development with uv
 
 ```bash
+export SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
 uv sync --all-extras
 uv run flask --app app:app run --host 0.0.0.0 --port ${PORT:-7070}
 ```
@@ -86,8 +88,23 @@ Pull and run
 docker pull ghcr.io/sudo-kraken/finances-tracker:latest
 docker run --rm -p 7070:7070 \
   -e PORT=7070 \
+  -e SECRET_KEY="replace-with-a-long-random-value" \
+  -v finances-data:/app/app/db \
   ghcr.io/sudo-kraken/finances-tracker:latest
 ```
+
+The supplied rootless Podman Quadlet requires a private environment file instead
+of embedding a secret in the unit. Create it before starting the unit:
+
+```bash
+install -d -m 0700 "$HOME/.config/containers/systemd"
+printf 'SECRET_KEY=%s\n' "$(openssl rand -hex 32)" \
+  > "$HOME/.config/containers/systemd/financestracker.env"
+chmod 0600 "$HOME/.config/containers/systemd/financestracker.env"
+```
+
+Keep this file stable across restarts; changing the key invalidates existing
+login sessions. A missing or empty key prevents the application from starting.
 
 ## Kubernetes (Helm)
 
@@ -99,7 +116,7 @@ helm install finances-tracker oci://ghcr.io/sudo-kraken/helm-charts/finances-tra
 ```
 
 By default, the chart generates its own development `SECRET_KEY` and creates a PersistentVolumeClaim for the SQLite database.  
-For production use, override values such as `secret.create=false` and provide your own secret, or switch to an external database via `SQLALCHEMY_DATABASE_URI`.
+For production use, override values such as `secret.create=false` and provide your own secret.
 
 ## Configuration
 
@@ -107,32 +124,57 @@ For production use, override values such as `secret.create=false` and provide yo
 |----------|----------|---------|-------------|
 | PORT | no | 7070 | Port to bind |
 | WEB_CONCURRENCY | no | 2 | Gunicorn worker processes |
-| SECRET_KEY | yes in production |  | Flask secret key used for sessions |
-| SQLALCHEMY_DATABASE_URI | no | sqlite:///app/db/finances.db | Database URI |
+| SECRET_KEY | yes |  | Long random key used to protect sessions and CSRF tokens |
+| DATABASE_FOLDER | no | app/db | Folder for the bundled SQLite database |
+| SQLALCHEMY_DATABASE_URI | no | sqlite:///\<DATABASE_FOLDER\>/finances.db | Advanced database URI override; the packaged app includes only the SQLite driver |
 | FINANCES_TESTING | no | 0 | Enables test configuration |
+| ALLOW_REGISTRATION | no | false | Allow additional users after the first account is created |
+| SESSION_COOKIE_SECURE | no | false | Only send session cookies over HTTPS |
 
 `.env` example
 
 ```dotenv
 PORT=7070
 WEB_CONCURRENCY=2
-SECRET_KEY=change-me
-SQLALCHEMY_DATABASE_URI=sqlite:///app/db/finances.db
+SECRET_KEY=replace-with-a-long-random-value
+DATABASE_FOLDER=/app/app/db
+SQLALCHEMY_DATABASE_URI=sqlite:////app/app/db/finances.db
+ALLOW_REGISTRATION=false
+SESSION_COOKIE_SECURE=true
 ```
+
+On an empty installation, the registration page remains available until the
+first account is created. Further registration is disabled unless
+`ALLOW_REGISTRATION=true`.
+
+## Database upgrades
+
+Schema upgrades run automatically during application startup. Existing
+databases are upgraded in place and their rows are preserved; no manual
+migration command is required. Back up the database volume before deploying a
+new application version as part of normal operational practice.
+
+When ownership is added to an older database, existing financial data is
+assigned to its first user. If the database contains financial data but no user,
+the data is held by an unloginable migration account and transferred to the
+first subsequently registered user.
 
 ## Health
 
 - `GET /health` returns `{ "status": "healthy" }` when the database connection succeeds.
+- A database failure returns HTTP 503 with `{ "status": "unhealthy" }`; internal error details are logged rather than exposed.
 
 ## Data and backups
 
 - For SQLite, mount a volume to persist `app/db/finances.db` when using Docker.
-- For other databases, use their native backup tooling.
+- The packaged application and container support SQLite. A custom external
+  database URI requires installing its Python driver in a custom build.
 
 ## Production notes
 
-- Always set `SECRET_KEY` in production.
+- Always set `SECRET_KEY` to a long random value and keep it stable between restarts.
 - If you expose the app on the internet, put it behind a reverse proxy that terminates TLS and sets secure cookies.
+- Set `SESSION_COOKIE_SECURE=true` whenever the app is served exclusively over HTTPS.
 
 ## Development
 

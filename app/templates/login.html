@@ -1,28 +1,47 @@
 {% extends "base.html" %}
+{% from "_form_helpers.html" import csrf_errors, field_errors %}
 {% block title %}Login - Finance Tracker{% endblock %}
 {% block content %}
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-  <div class="card form-card p-4" style="max-width: 400px; width: 100%;">
-    <h3 class="mb-4 text-center" style="color: #ddd;">Login</h3>
-    <form method="post">
+<div class="auth-layout">
+  <div class="card form-card auth-card">
+    <h1 class="h3 mb-4 text-center">Login</h1>
+    <form method="post" novalidate>
       {{ form.hidden_tag() }}
+      {{ csrf_errors(form, "login-csrf-errors") }}
       <div class="mb-3">
-        {{ form.username.label(class="form-label") }}
-        {{ form.username(class="form-control") }}
+        <label class="form-label" for="login-username">{{ form.username.label.text }}</label>
+        {{ form.username(
+          class="form-control" ~ (" is-invalid" if form.username.errors else ""),
+          id="login-username",
+          autocomplete="username",
+          autofocus=true,
+          aria_describedby="login-username-errors",
+          aria_invalid="true" if form.username.errors else "false"
+        ) }}
+        {{ field_errors(form.username, "login-username-errors") }}
       </div>
       <div class="mb-3">
-        {{ form.password.label(class="form-label") }}
-        {{ form.password(class="form-control") }}
+        <label class="form-label" for="login-password">{{ form.password.label.text }}</label>
+        {{ form.password(
+          class="form-control" ~ (" is-invalid" if form.password.errors else ""),
+          id="login-password",
+          autocomplete="current-password",
+          aria_describedby="login-password-errors",
+          aria_invalid="true" if form.password.errors else "false"
+        ) }}
+        {{ field_errors(form.password, "login-password-errors") }}
       </div>
       <button type="submit" class="btn btn-primary w-100 mb-3">
         {{ form.submit.label.text }}
       </button>
     </form>
+    {% if registration_open %}
     <div class="text-center">
-      <small style="color: #aaa;">Don't have an account?</small>
+      <small class="text-muted-readable">Don't have an account?</small>
       <br>
       <a href="{{ url_for('main.register') }}" class="btn btn-secondary btn-sm mt-2">Register</a>
     </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

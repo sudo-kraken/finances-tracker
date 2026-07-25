@@ -1,0 +1,23 @@
+{% macro field_errors(field, error_id, show=true) -%}
+  <div
+    id="{{ error_id }}"
+    class="invalid-feedback{% if show and field.errors %} d-block{% endif %}"
+    {% if show and field.errors %}role="alert"{% else %}hidden{% endif %}
+  >
+    {% if show %}
+      {% for error in field.errors %}
+        <span class="d-block">{{ error }}</span>
+      {% endfor %}
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+{% macro csrf_errors(form, error_id, show=true) -%}
+  {% if show and form.csrf_token is defined and form.csrf_token.errors %}
+    <div id="{{ error_id }}" class="alert alert-danger" role="alert">
+      {% for error in form.csrf_token.errors %}
+        <span class="d-block">{{ error }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+{%- endmacro %}

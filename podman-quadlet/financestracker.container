@@ -14,8 +14,10 @@ Pull=newer
 ContainerName=finances-tracker
 HostName=finances-tracker
 
-Environment=SECRET_KEY=
+# Required: create this file with a non-empty, persistent SECRET_KEY before
+# starting the unit. The application refuses to start without one.
+EnvironmentFile=%h/.config/containers/systemd/financestracker.env
 
-Volume=finances-tracker-db:/app/db:z
+Volume=finances-tracker-db:/app/app/db:z
 
 PublishPort=7070:7070
