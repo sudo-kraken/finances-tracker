@@ -26,4 +26,4 @@ EXPOSE 7070
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD curl -fsS "http://127.0.0.1:${PORT}/health" || exit 1
   
-CMD ["sh", "-c", "uv run gunicorn -w 2 -b 0.0.0.0:${PORT:-7070} app:app"]
+CMD ["sh", "-c", "uv run gunicorn --workers ${WEB_CONCURRENCY:-2} -b 0.0.0.0:${PORT:-7070} app:app"]
