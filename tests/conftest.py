@@ -5,11 +5,13 @@ import sys
 
 import pytest
 
+# Some tests import the package during collection, before fixtures run.
+# Configure the safe in-memory application before any test module can import it.
+os.environ["FINANCES_TESTING"] = "1"
+
 
 @pytest.fixture(scope="session")
 def app_module():
-    # Safe test config
-    os.environ["FINANCES_TESTING"] = "1"
     # If already imported, drop and re-import so the env takes effect
     if "app" in sys.modules:
         sys.modules.pop("app")
