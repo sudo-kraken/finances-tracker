@@ -9,7 +9,7 @@ def test_models_crud_and_relationships(db):
     u.set_password("secret123")
     _db.session.add(u)
 
-    m = Month(name="October")
+    m = Month(name="October", user=u)
     _db.session.add(m)
     _db.session.commit()
 
@@ -29,3 +29,5 @@ def test_models_crud_and_relationships(db):
     assert a.bills[0].name == "Rent"
     assert a.incomes[0].name == "Salary"
     assert bill.linked_income_id == inc.id
+    assert len(u.password_hash) > 128
+    assert User.password_hash.type.length == 512

@@ -28,7 +28,7 @@ dev = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py313"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = [
@@ -69,7 +69,7 @@ filterwarnings = [
 
 [tool.coverage.run]
 source = ["app"]
-omit = ["*/tests/*", "app/routes.py"]
+omit = ["*/tests/*"]
 
 [tool.coverage.report]
 exclude_lines = [

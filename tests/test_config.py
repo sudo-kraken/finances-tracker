@@ -1,5 +1,7 @@
 import importlib
 
+import pytest
+
 
 def test_config_defaults_importable():
     from app.config import Config  # type: ignore
@@ -9,6 +11,17 @@ def test_config_defaults_importable():
     assert hasattr(c, "SQLALCHEMY_DATABASE_URI")
 
 
+def test_config_uses_database_uri_from_environment(monkeypatch):
+    import app.config as cfg  # type: ignore
+
+    with monkeypatch.context() as scoped_monkeypatch:
+        scoped_monkeypatch.setenv("SQLALCHEMY_DATABASE_URI", "sqlite:///custom.db")
+        reloaded = importlib.reload(cfg)
+
+    assert reloaded.Config.SQLALCHEMY_DATABASE_URI == "sqlite:///custom.db"
+    importlib.reload(cfg)
+
+
 def test_db_folder_creation_line_is_executed(monkeypatch):
     import app.config as cfg  # type: ignore
 
@@ -16,11 +29,19 @@ def test_db_folder_creation_line_is_executed(monkeypatch):
     monkeypatch.setattr("os.path.exists", lambda path: False)
     calls = {"count": 0}
 
-    def fake_makedirs(path):
+    def fake_makedirs(path, exist_ok=False):
         calls["count"] += 1
+        assert exist_ok is True
 
     monkeypatch.setattr("os.makedirs", fake_makedirs)
     importlib.reload(cfg)
 
     # At least one makedirs call should have been attempted
     assert calls["count"] >= 1
+
+
+def test_app_requires_an_explicit_secret_key():
+    from app import create_app
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        create_app({"TESTING": False, "SECRET_KEY": None})

@@ -50,3 +50,41 @@ def test_destination_coerce_and_choices(app):
         f.destination_account.choices = [(0, "--"), (7, "Acc")]
         assert f.validate() is True
         assert f.destination_account.data == 7
+
+
+def test_transfer_requires_a_destination_even_when_unpaid(app):
+    from app.forms import BillForm  # type: ignore
+
+    with app.test_request_context(
+        method="POST",
+        data={
+            "name": "Transfer",
+            "amount": "10.00",
+            "transfer": "y",
+            "destination_account": "0",
+        },
+    ):
+        form = BillForm(meta={"csrf": False})
+        form.destination_account.choices = [(0, "-- No Transfer --"), (7, "Savings")]
+
+        assert form.validate() is False
+        assert "destination_account" in form.errors
+
+
+def test_amount_must_be_finite_and_have_at_most_two_decimal_places(app):
+    from app.forms import IncomeForm  # type: ignore
+
+    invalid_amounts = {
+        "NaN": "finite",
+        "Infinity": "finite",
+        "-Infinity": "finite",
+        "10.999": "two decimal places",
+    }
+    for amount, expected_error in invalid_amounts.items():
+        with app.test_request_context(
+            method="POST",
+            data={"name": "Income", "amount": amount, "contributor": "Alice"},
+        ):
+            form = IncomeForm(meta={"csrf": False})
+            assert form.validate() is False
+            assert any(expected_error in error for error in form.amount.errors)
