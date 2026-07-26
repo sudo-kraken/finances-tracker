@@ -920,9 +920,10 @@ def test_renaming_source_account_updates_generated_transfer_income(client, app, 
         {"x": 0, "y": -1, "width": 400, "height": 350},
         {"x": 0, "y": 0, "width": 399, "height": 350},
         {"x": 0, "y": 0, "width": 400, "height": 349},
-        {"x": 0, "y": 0, "width": 1201, "height": 350},
+        {"x": 0, "y": 0, "width": 10001, "height": 350},
         {"x": 0, "y": 0, "width": 400, "height": 1201},
-        {"x": 801, "y": 0, "width": 400, "height": 350},
+        {"x": 9601, "y": 0, "width": 400, "height": 350},
+        {"x": float("inf"), "y": 0, "width": 400, "height": 350},
     ],
 )
 def test_account_position_rejects_out_of_bounds_geometry(client, app, db, payload):
@@ -964,15 +965,33 @@ def test_account_position_accepts_boundary_geometry(client, app, db):
 
     response = client.post(
         f"/account/{account_id}/update_position",
-        json={"x": 800, "y": 0, "width": 400, "height": 1200},
+        json={"x": 9600, "y": 0, "width": 400, "height": 1200},
     )
     assert response.status_code == 200
     assert response.get_json() == {"success": True}
 
     with app.app_context():
         account = db.session.get(Account, account_id)
-        assert (account.pos_x, account.pos_y) == (800, 0)
+        assert (account.pos_x, account.pos_y) == (9600, 0)
         assert (account.width, account.height) == (400, 1200)
+
+
+def test_account_position_accepts_geometry_beyond_legacy_workspace_width(client, app, db):
+    from app.models import Account
+
+    finances = build_finances(db, "alice")
+    account_id = finances.source.id
+    log_in(client, "alice")
+
+    response = client.post(
+        f"/account/{account_id}/update_position",
+        json={"x": 1300, "y": 0, "width": 400, "height": 350},
+    )
+
+    assert response.status_code == 200
+    with app.app_context():
+        account = db.session.get(Account, account_id)
+        assert (account.pos_x, account.width) == (1300, 400)
 
 
 def test_new_accounts_are_placed_on_a_non_overlapping_grid(client, app, db):

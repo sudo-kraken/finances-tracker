@@ -16,12 +16,13 @@ from .schema_migrations import (
 
 bp = Blueprint("main", __name__)
 
-CANVAS_WIDTH = 1200
 CARD_WIDTH = 400
 CARD_HEIGHT = 350
 CARD_X_STEP = 420
 CARD_Y_STEP = 370
 MAX_CARD_HEIGHT = 1200
+# The browser clamps geometry to its rendered canvas; these are persistence safety bounds.
+MAX_LAYOUT_WIDTH = 10000
 MAX_CANVAS_Y = 10000
 MONTH_NAME_MAX_LENGTH = 50
 INCOME_NAME_MAX_LENGTH = 100
@@ -343,7 +344,7 @@ def update_account_position(account_id):
         new_y = int(data.get("y"))
         new_w = int(data.get("width"))
         new_h = int(data.get("height"))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return jsonify({"error": "Invalid numeric data"}), 400
 
     if (
@@ -351,9 +352,9 @@ def update_account_position(account_id):
         or new_y < 0
         or new_w < CARD_WIDTH
         or new_h < CARD_HEIGHT
-        or new_w > CANVAS_WIDTH
+        or new_w > MAX_LAYOUT_WIDTH
         or new_h > MAX_CARD_HEIGHT
-        or new_x + new_w > CANVAS_WIDTH
+        or new_x + new_w > MAX_LAYOUT_WIDTH
         or new_y > MAX_CANVAS_Y
     ):
         return jsonify({"error": "Position or size is outside the allowed workspace"}), 400
