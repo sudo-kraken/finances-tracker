@@ -11,7 +11,20 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Index, Integer, MetaData, Table, inspect, select, text
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    UniqueConstraint,
+    inspect,
+    select,
+    text,
+)
 from sqlalchemy.engine import Connection, Engine
 
 LEGACY_OWNER_USERNAME = "_legacy_data_owner"
@@ -385,6 +398,36 @@ def _seed_registration_gate(connection: Connection) -> None:
         )
 
 
+def _add_oidc_identity_table(connection: Connection) -> None:
+    """Add optional external identities without changing existing users."""
+
+    if "user" not in set(inspect(connection).get_table_names()):
+        return
+
+    identity_metadata = MetaData()
+    Table("user", identity_metadata, autoload_with=connection)
+    oidc_identity = Table(
+        "oidc_identity",
+        identity_metadata,
+        Column("id", Integer, primary_key=True),
+        Column(
+            "user_id",
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        Column("issuer", String(255), nullable=False),
+        Column("subject", String(255), nullable=False),
+        Column("email", String(320), nullable=True),
+        Column("created_at", DateTime, nullable=False),
+        Column("last_login_at", DateTime, nullable=True),
+        UniqueConstraint("issuer", "subject", name="uq_oidc_identity_issuer_subject"),
+        UniqueConstraint("user_id", "issuer", name="uq_oidc_identity_user_issuer"),
+    )
+    Index("ix_oidc_identity_user_id", oidc_identity.c.user_id)
+    oidc_identity.create(bind=connection, checkfirst=True)
+
+
 def _normalize_account_geometry(connection: Connection) -> None:
     inspector = inspect(connection)
     if "account" not in set(inspector.get_table_names()):
@@ -456,4 +499,5 @@ _MIGRATIONS: tuple[Migration, ...] = (
     (4, _widen_password_hash),
     (5, _enforce_month_owner_constraints),
     (6, _seed_registration_gate),
+    (7, _add_oidc_identity_table),
 )

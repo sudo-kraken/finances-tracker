@@ -1,7 +1,8 @@
 from decimal import Decimal
+from time import time
 
 from dateutil.relativedelta import relativedelta
-from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
 
@@ -161,15 +162,25 @@ def login():
         if user is None or not user.check_password(form.password.data):
             flash("Invalid username or password.")
             return redirect(url_for("main.login"))
-        login_user(user)
+        session.clear()
+        login_user(user, remember=False, fresh=True)
+        session["auth_method"] = "password"
+        session["local_authenticated_at"] = int(time())
         return redirect(url_for("main.months"))
-    return render_template("login.html", form=form, registration_open=_registration_open())
+    return render_template(
+        "login.html",
+        form=form,
+        registration_open=_registration_open(),
+        oidc_enabled=current_app.config["OIDC_ENABLED"],
+        oidc_display_name=current_app.config["OIDC_DISPLAY_NAME"],
+    )
 
 
 @bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
+    session.clear()
     return redirect(url_for("main.login"))
 
 
