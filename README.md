@@ -22,7 +22,7 @@ _A small Flask application for tracking monthly finances. Built with SQLite and 
 <div align="center">
   
 ![Demo](docs/assets/preview.gif)  
-*Animation shows the basic functionality of the application*
+*Animation shows sign-in, monthly workspaces, two accounts side by side, and adding a bill.*
 </div>
 
 ## Contents
