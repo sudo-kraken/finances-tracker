@@ -16,6 +16,15 @@ HostName=finances-tracker
 
 # Required: create this file with a non-empty, persistent SECRET_KEY before
 # starting the unit. The application refuses to start without one.
+# Optional Pocket ID settings belong in the same private file. A complete
+# confidential-client configuration looks like:
+# OIDC_ISSUER_URL=https://id.example.com
+# OIDC_CLIENT_ID=<client ID>
+# OIDC_CLIENT_SECRET=<generated client secret>
+# OIDC_REDIRECT_URI=https://finances.example.com/auth/oidc/callback
+# OIDC_DISPLAY_NAME=Pocket ID
+# OIDC_AUTO_PROVISION=false
+# SESSION_COOKIE_SECURE=true
 EnvironmentFile=%h/.config/containers/systemd/financestracker.env
 
 Volume=finances-tracker-db:/app/app/db:z

@@ -35,6 +35,20 @@
         {{ form.submit.label.text }}
       </button>
     </form>
+    {% if oidc_enabled %}
+    <div class="d-flex align-items-center gap-3 my-3" aria-hidden="true">
+      <hr class="flex-grow-1 m-0">
+      <span class="text-muted-readable small">or</span>
+      <hr class="flex-grow-1 m-0">
+    </div>
+    <form method="post" action="{{ url_for('oidc.login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-secondary w-100 mb-3">
+        <i class="fas fa-shield-halved" aria-hidden="true"></i>
+        Sign in with {{ oidc_display_name }}
+      </button>
+    </form>
+    {% endif %}
     {% if registration_open %}
     <div class="text-center">
       <small class="text-muted-readable">Don't have an account?</small>

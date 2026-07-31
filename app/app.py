@@ -49,9 +49,13 @@ def create_app(config_overrides: dict | None = None) -> Flask:
 
         upgrade_schema(db.engine, db.metadata)
 
+    from .oidc import bp as oidc_bp
+    from .oidc import init_oidc
     from .routes import bp as main_bp
 
+    init_oidc(app)
     app.register_blueprint(main_bp)
+    app.register_blueprint(oidc_bp)
 
     @app.after_request
     def add_security_headers(response):

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Account - Finance Tracker{% endblock %}
+{% block content %}
+<div class="auth-layout">
+  <div class="card form-card auth-card">
+    <h1 class="h3 mb-3">Account</h1>
+    <h2 class="h5">{{ oidc_display_name }}</h2>
+    {% if identity %}
+    <p class="text-muted-readable mb-0">
+      Connected{% if identity.email %} as {{ identity.email }}{% endif %}.
+      You can now sign in with {{ oidc_display_name }}. Your local password remains available if you have one.
+    </p>
+    {% if can_disconnect %}
+    <form method="post" action="{{ url_for('oidc.disconnect') }}" class="mt-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger w-100">Disconnect {{ oidc_display_name }}</button>
+    </form>
+    {% else %}
+    <p class="text-muted-readable small mt-3 mb-0">
+      To change this connection, sign out and sign back in with your local password first.
+    </p>
+    {% endif %}
+    {% else %}
+    <p class="text-muted-readable">
+      Connect this account before using {{ oidc_display_name }} to sign in. Your existing months and password will stay unchanged.
+    </p>
+    <form method="post" action="{{ url_for('oidc.link') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary w-100">
+        Connect {{ oidc_display_name }}
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

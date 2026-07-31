@@ -20,12 +20,40 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(512), nullable=False)
 
     months = db.relationship("Month", back_populates="user", cascade="all, delete-orphan")
+    oidc_identities = db.relationship(
+        "OidcIdentity",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+
+class OidcIdentity(db.Model):
+    __tablename__ = "oidc_identity"
+    __table_args__ = (
+        db.UniqueConstraint("issuer", "subject", name="uq_oidc_identity_issuer_subject"),
+        db.UniqueConstraint("user_id", "issuer", name="uq_oidc_identity_user_issuer"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    issuer = db.Column(db.String(255), nullable=False)
+    subject = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(320), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
+    last_login_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship("User", back_populates="oidc_identities")
 
 
 class RegistrationGate(db.Model):

@@ -96,7 +96,7 @@ def test_existing_rows_are_preserved_and_assigned_to_first_user(tmp_path, migrat
     assert months == [(11, "January", 3), (12, "February", 3)]
     assert accounts == [(20, 11, "Current")]
     assert users == [(3, "first"), (8, "second")]
-    assert versions == [(1,), (2,), (3,), (4,), (5,), (6,)]
+    assert versions == [(1,), (2,), (3,), (4,), (5,), (6,), (7,)]
     with engine.connect() as connection:
         assert connection.execute(text("SELECT id FROM registration_gate")).scalars().all() == [1]
     engine.dispose()
@@ -145,8 +145,63 @@ def test_fresh_database_stays_free_of_legacy_owner(tmp_path, migrations):
 
     with engine.connect() as connection:
         assert connection.execute(text("SELECT COUNT(*) FROM user")).scalar_one() == 0
-        assert connection.execute(text("SELECT version FROM schema_migration")).scalars().all() == [1, 2, 3, 4, 5, 6]
+        assert connection.execute(text("SELECT version FROM schema_migration")).scalars().all() == [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+        ]
         assert connection.execute(text("SELECT COUNT(*) FROM registration_gate")).scalar_one() == 0
+    engine.dispose()
+
+
+def test_oidc_identity_table_is_added_without_changing_existing_users(tmp_path, migrations):
+    engine = _sqlite_engine(tmp_path / "legacy-oidc.db")
+    _create_legacy_schema(engine, include_users=True)
+    with engine.connect() as connection:
+        users_before = connection.execute(text("SELECT id, username, password_hash FROM user ORDER BY id")).all()
+
+    migrations.upgrade_schema(engine)
+    migrations.upgrade_schema(engine)
+
+    inspector = inspect(engine)
+    columns = {column["name"]: column for column in inspector.get_columns("oidc_identity")}
+    unique_constraints = {
+        tuple(constraint["column_names"]) for constraint in inspector.get_unique_constraints("oidc_identity")
+    }
+    foreign_keys = inspector.get_foreign_keys("oidc_identity")
+    indexes = {index["name"] for index in inspector.get_indexes("oidc_identity")}
+
+    assert set(columns) == {
+        "id",
+        "user_id",
+        "issuer",
+        "subject",
+        "email",
+        "created_at",
+        "last_login_at",
+    }
+    assert columns["user_id"]["nullable"] is False
+    assert columns["issuer"]["nullable"] is False
+    assert columns["subject"]["nullable"] is False
+    assert columns["created_at"]["nullable"] is False
+    assert ("issuer", "subject") in unique_constraints
+    assert ("user_id", "issuer") in unique_constraints
+    assert "ix_oidc_identity_user_id" in indexes
+    assert any(
+        foreign_key.get("referred_table") == "user" and foreign_key.get("constrained_columns") == ["user_id"]
+        for foreign_key in foreign_keys
+    )
+
+    with engine.connect() as connection:
+        users_after = connection.execute(text("SELECT id, username, password_hash FROM user ORDER BY id")).all()
+        versions = connection.execute(text("SELECT version FROM schema_migration ORDER BY version")).scalars().all()
+
+    assert users_after == users_before
+    assert versions == [1, 2, 3, 4, 5, 6, 7]
     engine.dispose()
 
 
@@ -160,7 +215,7 @@ def test_parallel_startup_only_migrates_once(tmp_path, migrations):
             future.result()
 
     with engine.connect() as connection:
-        assert connection.execute(text("SELECT COUNT(*) FROM schema_migration")).scalar_one() == 6
+        assert connection.execute(text("SELECT COUNT(*) FROM schema_migration")).scalar_one() == 7
         assert connection.execute(text("SELECT COUNT(*) FROM user")).scalar_one() == 1
         assert connection.execute(text("SELECT COUNT(*) FROM month WHERE user_id IS NULL")).scalar_one() == 0
     engine.dispose()
@@ -213,7 +268,7 @@ def test_legacy_account_geometry_is_preserved_and_normalized(tmp_path, migration
         (24, "Missing geometry", 0, 0, 400, 350),
     ]
     assert normalized_twice == normalized_once
-    assert versions == [1, 2, 3, 4, 5, 6]
+    assert versions == [1, 2, 3, 4, 5, 6, 7]
     engine.dispose()
 
 

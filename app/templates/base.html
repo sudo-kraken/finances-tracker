@@ -21,6 +21,13 @@
       <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
         <ul class="navbar-nav">
           {% if current_user.is_authenticated %}
+          {% if config.OIDC_ENABLED %}
+          <li class="nav-item">
+            <a class="nav-link btn btn-outline-light me-2" href="{{ url_for('oidc.settings') }}">
+              <i class="fas fa-user-shield" aria-hidden="true"></i> Account
+            </a>
+          </li>
+          {% endif %}
           <li class="nav-item">
             <form method="post" action="{{ url_for('main.logout') }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

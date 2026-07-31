@@ -34,6 +34,7 @@ _A small Flask application for tracking monthly finances. Built with SQLite and 
 - [Quick start](#quick-start)
 - [Docker](#docker)
 - [Configuration](#configuration)
+- [Authentication and OpenID Connect](#authentication-and-openid-connect)
 - [Database upgrades](#database-upgrades)
 - [Health](#health)
 - [Production notes](#production-notes)
@@ -58,6 +59,7 @@ Create an account, sign in, and manage accounts, bills and incomes within monthl
 ## Features
 
 - Per-user financial workspaces protected by Flask-Login
+- Local password authentication with optional OpenID Connect sign-in
 - Monthly workspaces with accounts, bills and incomes
 - Accurate Decimal handling for money values
 - Persistent SQLite storage with automatic schema upgrades
@@ -130,6 +132,12 @@ For production use, override values such as `secret.create=false` and provide yo
 | FINANCES_TESTING | no | 0 | Enables test configuration |
 | ALLOW_REGISTRATION | no | false | Allow additional users after the first account is created |
 | SESSION_COOKIE_SECURE | no | false | Only send session cookies over HTTPS |
+| OIDC_ISSUER_URL | no |  | OpenID Connect issuer base URL, such as `https://id.example.com`; required with the other core OIDC variables when OIDC is enabled |
+| OIDC_CLIENT_ID | no |  | Client ID issued by the OpenID Provider |
+| OIDC_CLIENT_SECRET | no |  | Client secret for the confidential OIDC client; keep this out of source control |
+| OIDC_REDIRECT_URI | no |  | Exact public callback URL, ending in `/auth/oidc/callback`; required when OIDC is enabled |
+| OIDC_DISPLAY_NAME | no | Pocket ID | Provider name shown on sign-in and account-linking controls |
+| OIDC_AUTO_PROVISION | no | false | Create a new local account for an otherwise unknown OIDC identity; existing accounts are never matched by email or username |
 
 `.env` example
 
@@ -141,11 +149,72 @@ DATABASE_FOLDER=/app/app/db
 SQLALCHEMY_DATABASE_URI=sqlite:////app/app/db/finances.db
 ALLOW_REGISTRATION=false
 SESSION_COOKIE_SECURE=true
+
+# Optional OpenID Connect / Pocket ID configuration; uncomment all four core settings together
+# OIDC_ISSUER_URL=https://id.example.com
+# OIDC_CLIENT_ID=replace-with-client-id
+# OIDC_CLIENT_SECRET=replace-with-client-secret
+# OIDC_REDIRECT_URI=https://finances.example.com/auth/oidc/callback
+# OIDC_DISPLAY_NAME=Pocket ID
+# OIDC_AUTO_PROVISION=false
 ```
 
 On an empty installation, the registration page remains available until the
 first account is created. Further registration is disabled unless
 `ALLOW_REGISTRATION=true`.
+
+## Authentication and OpenID Connect
+
+OpenID Connect is optional and runs alongside the existing local password
+login. Leave `OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` and
+`OIDC_REDIRECT_URI` all unset to preserve the local-only behaviour. When OIDC
+is enabled, all four are required; a partial configuration fails startup rather
+than exposing a broken sign-in option. Existing usernames, password hashes,
+ownership and financial data are not changed when OIDC is enabled.
+
+The app identifies an external account by the provider's immutable issuer and
+subject values. It never links an existing account by email, display name or
+username. An existing user should sign in with their local password and use the
+account-linking action before signing in through Pocket ID. Once linked, either
+sign-in method opens the same local account and data. A recently password-authenticated
+user can also disconnect Pocket ID from the Account page if the wrong identity
+was linked or the connection needs to be replaced.
+
+Unknown OIDC identities are rejected by default. Set
+`OIDC_AUTO_PROVISION=true` only if users who have not linked or registered a
+local account should be allowed to create one automatically. Auto-provisioning
+does not merge identities into existing accounts. These automatically created
+accounts are OIDC-only and do not receive a usable local password.
+
+Signing out clears the Finances Tracker session but does not end the user's
+Pocket ID single sign-on session. Disabling a user in Pocket ID prevents future
+OIDC sign-ins but does not revoke an already active Finances Tracker browser
+session. Existing users who have a local password can still use it if the
+identity provider is unavailable; OIDC-only auto-provisioned users cannot.
+
+### Pocket ID setup
+
+1. Create an OIDC client in Pocket ID and leave **Public Client** disabled. The
+   application is a confidential server-side client.
+2. Enable PKCE for the client. The application uses the `S256` challenge
+   method.
+3. Register the exact public callback URL. It must end in
+   `/auth/oidc/callback`, for example
+   `https://finances.example.com/auth/oidc/callback`.
+4. Configure the application to request the `openid profile email` scopes.
+5. Under **Allowed User Groups**, select the Pocket ID groups that may use the
+   client, or explicitly unrestrict it. A new Pocket ID client does not permit
+   users until this is configured.
+6. Copy the issuer URL, client ID and generated client secret into the private
+   application environment. Use the Pocket ID base issuer URL, without adding
+   `/.well-known/openid-configuration`; discovery is handled automatically.
+
+Set `OIDC_REDIRECT_URI` explicitly when the app is behind Traefik or another
+reverse proxy so the authorization request uses the same external HTTPS URL
+registered in Pocket ID. Set `SESSION_COOKIE_SECURE=true` whenever that public
+URL is HTTPS. Keep `SECRET_KEY` and `OIDC_CLIENT_SECRET` stable and load them
+from an environment file, container secret or equivalent secret store rather
+than committing them.
 
 ## Database upgrades
 
@@ -153,6 +222,10 @@ Schema upgrades run automatically during application startup. Existing
 databases are upgraded in place and their rows are preserved; no manual
 migration command is required. Back up the database volume before deploying a
 new application version as part of normal operational practice.
+
+Enabling OIDC adds its identity mappings through the same automatic migration
+process. Existing local users require no database preparation and remain able
+to sign in with their current passwords.
 
 When ownership is added to an older database, existing financial data is
 assigned to its first user. If the database contains financial data but no user,
@@ -187,6 +260,8 @@ uv run pytest --cov
 ## Troubleshooting
 
 - If the app fails to start with a database error, verify `SQLALCHEMY_DATABASE_URI` and that the target directory exists for SQLite.
+- If Pocket ID reports an invalid callback, verify that `OIDC_REDIRECT_URI` exactly matches its registered callback, including the scheme, host and `/auth/oidc/callback` path.
+- If Pocket ID denies access, assign the user to one of the client's allowed groups or explicitly unrestrict the client.
 - If log output is noisy, adjust the logging level via your process manager or container runtime.
 
 ## Licence
