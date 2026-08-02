@@ -14,6 +14,7 @@ services:
       OIDC_REDIRECT_URI: "${OIDC_REDIRECT_URI:-}"
       OIDC_DISPLAY_NAME: "${OIDC_DISPLAY_NAME:-Pocket ID}"
       OIDC_AUTO_PROVISION: "${OIDC_AUTO_PROVISION:-false}"
+      OIDC_ONLY: "${OIDC_ONLY:-false}"
     volumes:
       - ./data:/app/app/db
     restart: unless-stopped

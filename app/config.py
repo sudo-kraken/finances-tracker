@@ -31,6 +31,7 @@ class Config:
     OIDC_REDIRECT_URI = os.environ.get("OIDC_REDIRECT_URI", "")
     OIDC_DISPLAY_NAME = os.environ.get("OIDC_DISPLAY_NAME", "Pocket ID")
     OIDC_AUTO_PROVISION = _env_flag("OIDC_AUTO_PROVISION")
+    OIDC_ONLY = _env_flag("OIDC_ONLY")
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = _env_flag("SESSION_COOKIE_SECURE")

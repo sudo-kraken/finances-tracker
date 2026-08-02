@@ -9,7 +9,7 @@ _A small Flask application for tracking monthly finances. Built with SQLite and 
 
 <div align="center">
 
-[![Docker](https://img.shields.io/github/v/tag/sudo-kraken/finances-tracker?label=&logo=docker&style=for-the-badge&logoColor=white&color=blue)](https://github.com/sudo-kraken/finances-tracker/pkgs/container/finances-tracker) [![Helm](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Fhelm-charts%2Frefs%2Fheads%2Fmain%2Fcharts%2Ffinances-tracker%2FChart.yaml&query=%24.version&label=&logo=helm&style=for-the-badge&logoColor=0F1487&color=white)](https://github.com/sudo-kraken/helm-charts/tree/main/charts/finances-tracker) [![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Ffinances-tracker%2Fmain%2Fpyproject.toml&logo=python&logoColor=yellow&color=3776AB&style=for-the-badge)](https://github.com/sudo-kraken/finances-tracker/blob/main/pyproject.toml)
+[![Docker](https://img.shields.io/github/v/tag/sudo-kraken/finances-tracker?sort=semver&label=release&logo=docker&style=for-the-badge&logoColor=white&color=blue)](https://github.com/sudo-kraken/finances-tracker/pkgs/container/finances-tracker) [![Helm](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Fhelm-charts%2Frefs%2Fheads%2Fmain%2Fcharts%2Ffinances-tracker%2FChart.yaml&query=%24.version&label=&logo=helm&style=for-the-badge&logoColor=0F1487&color=white)](https://github.com/sudo-kraken/helm-charts/tree/main/charts/finances-tracker) [![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Ffinances-tracker%2Fmain%2Fpyproject.toml&logo=python&logoColor=yellow&color=3776AB&style=for-the-badge)](https://github.com/sudo-kraken/finances-tracker/blob/main/pyproject.toml)
 </div>
 
 <div align="center">
@@ -59,7 +59,7 @@ Create an account, sign in, and manage accounts, bills and incomes within monthl
 ## Features
 
 - Per-user financial workspaces protected by Flask-Login
-- Local password authentication with optional OpenID Connect sign-in
+- Optional OpenID Connect sign-in, including an OIDC-only mode
 - Monthly workspaces with accounts, bills and incomes
 - Accurate Decimal handling for money values
 - Persistent SQLite storage with automatic schema upgrades
@@ -138,6 +138,7 @@ For production use, override values such as `secret.create=false` and provide yo
 | OIDC_REDIRECT_URI | no |  | Exact public callback URL, ending in `/auth/oidc/callback`; required when OIDC is enabled |
 | OIDC_DISPLAY_NAME | no | Pocket ID | Provider name shown on sign-in and account-linking controls |
 | OIDC_AUTO_PROVISION | no | false | Create a new local account for an otherwise unknown OIDC identity; existing accounts are never matched by email or username |
+| OIDC_ONLY | no | false | Disable local username/password sign-in and registration; requires a complete OIDC configuration |
 
 `.env` example
 
@@ -157,16 +158,18 @@ SESSION_COOKIE_SECURE=true
 # OIDC_REDIRECT_URI=https://finances.example.com/auth/oidc/callback
 # OIDC_DISPLAY_NAME=Pocket ID
 # OIDC_AUTO_PROVISION=false
+# OIDC_ONLY=false
 ```
 
 On an empty installation, the registration page remains available until the
 first account is created. Further registration is disabled unless
-`ALLOW_REGISTRATION=true`.
+`ALLOW_REGISTRATION=true`. Local registration is always disabled when
+`OIDC_ONLY=true`.
 
 ## Authentication and OpenID Connect
 
 OpenID Connect is optional and runs alongside the existing local password
-login. Leave `OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` and
+login by default. Leave `OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` and
 `OIDC_REDIRECT_URI` all unset to preserve the local-only behaviour. When OIDC
 is enabled, all four are required; a partial configuration fails startup rather
 than exposing a broken sign-in option. Existing usernames, password hashes,
@@ -180,6 +183,16 @@ sign-in method opens the same local account and data. A recently password-authen
 user can also disconnect Pocket ID from the Account page if the wrong identity
 was linked or the connection needs to be replaced.
 
+To require Pocket ID for authentication, first connect every required existing
+local account and verify that OIDC login reaches the correct financial data. Then set
+`OIDC_ONLY=true` and restart the application. This removes the local login and
+registration forms, rejects direct username/password login and registration
+requests, ends existing non-OIDC sessions on their next request, and prevents
+the connected identity from being disconnected. `OIDC_ONLY` takes precedence
+over `ALLOW_REGISTRATION` and startup fails if the OIDC client configuration is
+missing. Set `OIDC_ONLY=false` again to restore local login; existing password
+hashes and account data are not changed.
+
 Unknown OIDC identities are rejected by default. Set
 `OIDC_AUTO_PROVISION=true` only if users who have not linked or registered a
 local account should be allowed to create one automatically. Auto-provisioning
@@ -189,8 +202,10 @@ accounts are OIDC-only and do not receive a usable local password.
 Signing out clears the Finances Tracker session but does not end the user's
 Pocket ID single sign-on session. Disabling a user in Pocket ID prevents future
 OIDC sign-ins but does not revoke an already active Finances Tracker browser
-session. Existing users who have a local password can still use it if the
-identity provider is unavailable; OIDC-only auto-provisioned users cannot.
+session. In the default mixed-authentication mode, existing users who have a
+local password can still use it if the identity provider is unavailable;
+OIDC-only auto-provisioned users cannot. When `OIDC_ONLY=true`, there is no
+local fallback during an identity-provider outage.
 
 ### Pocket ID setup
 
@@ -224,8 +239,9 @@ migration command is required. Back up the database volume before deploying a
 new application version as part of normal operational practice.
 
 Enabling OIDC adds its identity mappings through the same automatic migration
-process. Existing local users require no database preparation and remain able
-to sign in with their current passwords.
+process. Existing local users require no database preparation, and their
+password hashes remain unchanged. Password sign-in remains available unless
+`OIDC_ONLY=true`.
 
 When ownership is added to an older database, existing financial data is
 assigned to its first user. If the database contains financial data but no user,

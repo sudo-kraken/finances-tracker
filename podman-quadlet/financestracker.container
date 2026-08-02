@@ -24,6 +24,7 @@ HostName=finances-tracker
 # OIDC_REDIRECT_URI=https://finances.example.com/auth/oidc/callback
 # OIDC_DISPLAY_NAME=Pocket ID
 # OIDC_AUTO_PROVISION=false
+# OIDC_ONLY=false
 # SESSION_COOKIE_SECURE=true
 EnvironmentFile=%h/.config/containers/systemd/financestracker.env
 

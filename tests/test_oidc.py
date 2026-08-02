@@ -23,6 +23,7 @@ def oidc_config(**overrides):
         "OIDC_REDIRECT_URI": REDIRECT_URI,
         "OIDC_DISPLAY_NAME": "Test ID",
         "OIDC_AUTO_PROVISION": False,
+        "OIDC_ONLY": False,
     }
     config.update(overrides)
     return config
@@ -58,6 +59,20 @@ def oidc_app(app_module):
 @pytest.fixture
 def auto_provision_app(app_module):
     application = app_module.create_app(oidc_config(OIDC_AUTO_PROVISION=True))
+    yield application
+    close_app(application)
+
+
+@pytest.fixture
+def oidc_only_app(app_module):
+    application = app_module.create_app(oidc_config(OIDC_ONLY=True))
+    yield application
+    close_app(application)
+
+
+@pytest.fixture
+def oidc_only_auto_provision_app(app_module):
+    application = app_module.create_app(oidc_config(OIDC_ONLY=True, OIDC_AUTO_PROVISION=True))
     yield application
     close_app(application)
 
@@ -182,6 +197,11 @@ def test_partial_oidc_configuration_fails_fast(app_module):
         app_module.create_app(config)
 
 
+def test_oidc_only_requires_a_complete_provider_configuration(app_module):
+    with pytest.raises(RuntimeError, match="OIDC_ONLY requires a complete OIDC configuration"):
+        app_module.create_app(local_config(OIDC_ONLY=True))
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [
@@ -246,6 +266,164 @@ def test_login_page_and_start_use_the_configured_callback_and_fresh_nonce(oidc_a
     assert query["nonce"] == [nonces[1]]
     with client.session_transaction() as session:
         assert session["oidc_flow"] == {"action": "login", "user_id": None}
+
+
+def test_oidc_only_hides_and_rejects_local_login_and_registration(oidc_only_app):
+    alice = create_user(oidc_only_app, "alice", month_name="Private Month")
+    oidc_only_app.config["ALLOW_REGISTRATION"] = True
+    client = oidc_only_app.test_client()
+
+    login_page = client.get("/login")
+    assert login_page.status_code == 200
+    assert b"Sign in with Test ID" in login_page.data
+    assert b"login-username" not in login_page.data
+    assert b"login-password" not in login_page.data
+    assert b">Register<" not in login_page.data
+
+    local_login = client.post(
+        "/login",
+        data={"username": "alice", "password": PASSWORD},
+        follow_redirects=True,
+    )
+    assert local_login.status_code == 200
+    assert b"Username and password sign-in is disabled" in local_login.data
+    assert urlsplit(client.get("/months", follow_redirects=False).headers["Location"]).path == "/login"
+
+    assert client.get("/register", follow_redirects=False).headers["Location"].endswith("/login")
+    registration = client.post(
+        "/register",
+        data={
+            "username": "bob",
+            "password": "another-correct-horse-123",
+            "confirm_password": "another-correct-horse-123",
+        },
+        follow_redirects=True,
+    )
+    assert registration.status_code == 200
+    assert b"Username and password registration is disabled" in registration.data
+
+    from app.extensions import db
+    from app.models import User
+
+    with oidc_only_app.app_context():
+        users = db.session.scalars(db.select(User)).all()
+        assert [(user.id, user.username, user.password_hash) for user in users] == [
+            (alice["user_id"], "alice", alice["password_hash"])
+        ]
+
+
+def test_oidc_only_allows_linked_login_but_blocks_identity_changes(oidc_only_app):
+    alice = create_user(oidc_only_app, "alice", month_name="OIDC Month")
+    provider = install_fake_provider(oidc_only_app)
+    provider.userinfo = provider.claims("linked-subject", email="alice@example.com")
+
+    from app.extensions import db
+    from app.models import OidcIdentity, User
+
+    with oidc_only_app.app_context():
+        db.session.add(
+            OidcIdentity(
+                user_id=alice["user_id"],
+                issuer=ISSUER,
+                subject="linked-subject",
+                email="alice@example.com",
+            )
+        )
+        db.session.commit()
+
+    client = oidc_only_app.test_client()
+    start_oidc_login(client)
+    login = complete_callback(client)
+    assert login.status_code == 302
+    assert login.headers["Location"].endswith("/months")
+    assert b"OIDC Month" in client.get("/months").data
+
+    with client.session_transaction() as session:
+        assert session["_user_id"] == str(alice["user_id"])
+        assert session["auth_method"] == "oidc"
+
+    settings = client.get("/auth/oidc/settings")
+    assert b"Username and password sign-in is disabled" in settings.data
+    assert b"Disconnect Test ID" not in settings.data
+    assert b"Connect Test ID" not in settings.data
+
+    disconnect = client.post("/auth/oidc/disconnect", follow_redirects=True)
+    assert b"cannot be disconnected while OIDC-only login is enabled" in disconnect.data
+    link = client.post("/auth/oidc/link", follow_redirects=True)
+    assert b"Account linking is disabled while OIDC-only login is enabled" in link.data
+
+    with oidc_only_app.app_context():
+        user = db.session.get(User, alice["user_id"])
+        identity = db.session.scalar(db.select(OidcIdentity).where(OidcIdentity.subject == "linked-subject"))
+        assert user.password_hash == alice["password_hash"]
+        assert identity is not None
+        assert identity.user_id == alice["user_id"]
+
+
+def test_enabling_oidc_only_ends_an_existing_password_session(oidc_app):
+    alice = create_user(oidc_app, "alice", month_name="Local Month")
+    password_client = oidc_app.test_client()
+    legacy_client = oidc_app.test_client()
+    password_login(password_client, "alice")
+    password_login(legacy_client, "alice")
+    with legacy_client.session_transaction() as session:
+        session.pop("auth_method")
+
+    oidc_app.config["OIDC_ONLY"] = True
+    for client in (password_client, legacy_client):
+        response = client.get("/months", follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith("/login")
+        with client.session_transaction() as session:
+            assert "_user_id" not in session
+            assert "auth_method" not in session
+    with oidc_app.app_context():
+        from app.extensions import db
+        from app.models import User
+
+        assert db.session.get(User, alice["user_id"]).password_hash == alice["password_hash"]
+
+
+def test_enabling_oidc_only_keeps_an_existing_oidc_session(oidc_app):
+    alice = create_user(oidc_app, "alice", month_name="OIDC Month")
+    client = oidc_app.test_client()
+    with client.session_transaction() as session:
+        session["_user_id"] = str(alice["user_id"])
+        session["_fresh"] = True
+        session["auth_method"] = "oidc"
+
+    oidc_app.config["OIDC_ONLY"] = True
+    response = client.get("/months")
+
+    assert response.status_code == 200
+    assert b"OIDC Month" in response.data
+    with client.session_transaction() as session:
+        assert session["_user_id"] == str(alice["user_id"])
+        assert session["auth_method"] == "oidc"
+
+
+def test_oidc_only_blocks_a_link_callback_started_before_the_mode_changed(oidc_app):
+    provider = install_fake_provider(oidc_app)
+    client = oidc_app.test_client()
+    with client.session_transaction() as session:
+        session["oidc_flow"] = {"action": "link", "user_id": 1}
+    oidc_app.config["OIDC_ONLY"] = True
+
+    response = complete_callback(client, follow_redirects=True)
+    assert response.status_code == 200
+    assert b"Account linking is disabled while OIDC-only login is enabled" in response.data
+    assert provider.callback_calls == 0
+
+
+def test_oidc_only_provider_failures_do_not_offer_password_fallback(oidc_only_app):
+    provider = install_fake_provider(oidc_only_app)
+    provider.authorize_error = RuntimeError("provider unavailable")
+    client = oidc_only_app.test_client()
+
+    response = client.post("/auth/oidc/login", follow_redirects=True)
+    assert response.status_code == 200
+    assert b"Could not contact the identity provider. Please try again later." in response.data
+    assert b"Local password sign-in is still available" not in response.data
 
 
 def test_provider_outage_does_not_break_local_password_login(oidc_app):
@@ -569,6 +747,59 @@ def test_auto_provision_refuses_a_case_insensitive_local_username_collision(auto
             (alice["user_id"], "Alice", alice["password_hash"])
         ]
         assert db.session.scalar(db.select(db.func.count()).select_from(OidcIdentity)) == 0
+
+
+def test_oidc_only_unlinked_identity_guidance_does_not_offer_password_login(oidc_only_app):
+    provider = install_fake_provider(oidc_only_app)
+    provider.userinfo = provider.claims("unlinked-subject")
+    client = oidc_only_app.test_client()
+
+    start_oidc_login(client)
+    response = complete_callback(client, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert (
+        b"Ask the administrator to temporarily disable OIDC-only mode to link the existing account, "
+        b"or enable OIDC auto-provisioning" in response.data
+    )
+    assert b"Sign in with your password" not in response.data
+
+
+def test_oidc_only_auto_provisioning_remains_available(oidc_only_auto_provision_app):
+    provider = install_fake_provider(oidc_only_auto_provision_app)
+    provider.userinfo = provider.claims("new-oidc-subject", preferred_username="new.user")
+    client = oidc_only_auto_provision_app.test_client()
+
+    start_oidc_login(client)
+    response = complete_callback(client)
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/months")
+    with client.session_transaction() as session:
+        assert session["auth_method"] == "oidc"
+
+
+def test_oidc_only_username_collision_guidance_does_not_offer_password_login(oidc_only_auto_provision_app):
+    alice = create_user(oidc_only_auto_provision_app, "Alice")
+    provider = install_fake_provider(oidc_only_auto_provision_app)
+    provider.userinfo = provider.claims("attacker-subject", preferred_username="alice")
+    client = oidc_only_auto_provision_app.test_client()
+
+    start_oidc_login(client)
+    response = complete_callback(client, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Ask the administrator to resolve the account link" in response.data
+    assert b"Sign in with its password" not in response.data
+
+    from app.extensions import db
+    from app.models import User
+
+    with oidc_only_auto_provision_app.app_context():
+        users = db.session.scalars(db.select(User)).all()
+        assert [(user.id, user.username, user.password_hash) for user in users] == [
+            (alice["user_id"], "Alice", alice["password_hash"])
+        ]
 
 
 @pytest.mark.parametrize(

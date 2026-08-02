@@ -30,6 +30,8 @@ INCOME_NAME_MAX_LENGTH = 100
 
 
 def _registration_open():
+    if current_app.config.get("OIDC_ONLY", False):
+        return False
     if current_app.config["ALLOW_REGISTRATION"]:
         return True
     if db.session.get(RegistrationGate, 1) is not None:
@@ -118,6 +120,12 @@ def index():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for("main.months"))
+    if current_app.config["OIDC_ONLY"]:
+        flash(
+            f"Username and password registration is disabled. Use {current_app.config['OIDC_DISPLAY_NAME']}.",
+            "warning",
+        )
+        return redirect(url_for("main.login"))
     if not _registration_open():
         flash("Registration is disabled. Ask the administrator to create an account.")
         return redirect(url_for("main.login"))
@@ -157,6 +165,12 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("main.months"))
     form = LoginForm()
+    if current_app.config["OIDC_ONLY"] and request.method == "POST":
+        flash(
+            f"Username and password sign-in is disabled. Use {current_app.config['OIDC_DISPLAY_NAME']}.",
+            "warning",
+        )
+        return redirect(url_for("main.login"))
     if form.validate_on_submit():
         user = User.query.filter(db.func.lower(User.username) == form.username.data.lower()).first()
         if user is None or not user.check_password(form.password.data):
@@ -172,6 +186,7 @@ def login():
         form=form,
         registration_open=_registration_open(),
         oidc_enabled=current_app.config["OIDC_ENABLED"],
+        local_login_enabled=not current_app.config["OIDC_ONLY"],
         oidc_display_name=current_app.config["OIDC_DISPLAY_NAME"],
     )
 
@@ -179,8 +194,8 @@ def login():
 @bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
-    logout_user()
     session.clear()
+    logout_user()
     return redirect(url_for("main.login"))
 
 
