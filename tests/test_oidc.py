@@ -206,6 +206,11 @@ def test_oidc_only_requires_a_complete_provider_configuration(app_module):
     ("overrides", "message"),
     [
         ({"OIDC_ISSUER_URL": "not-a-url"}, "absolute HTTP"),
+        ({"OIDC_ISSUER_URL": "https://["}, "absolute HTTP"),
+        ({"OIDC_ISSUER_URL": "https://example.com:not-a-port"}, "absolute HTTP"),
+        ({"OIDC_ISSUER_URL": "https://user:password@id.example.com"}, "absolute HTTP"),
+        ({"OIDC_ISSUER_URL": "https://@"}, "absolute HTTP"),
+        ({"OIDC_ISSUER_URL": "https://id.example.com/with a space"}, "absolute HTTP"),
         ({"OIDC_ISSUER_URL": "http://id.example.com"}, "must use HTTPS"),
         ({"OIDC_ISSUER_URL": f"{ISSUER}?tenant=one"}, "without a query or fragment"),
         (

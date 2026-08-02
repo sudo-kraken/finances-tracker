@@ -98,10 +98,28 @@ def _display_name(app) -> str:
 
 
 def _validate_url(name: str, value: str, *, callback: bool = False) -> None:
-    parsed = urlsplit(value)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.query or parsed.fragment:
-        raise RuntimeError(f"{name} must be an absolute HTTP(S) URL without a query or fragment")
-    if parsed.scheme != "https" and parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+    invalid_url_message = f"{name} must be an absolute HTTP(S) URL without a query or fragment"
+    if any(character.isspace() or ord(character) < 32 for character in value):
+        raise RuntimeError(invalid_url_message)
+
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        _ = parsed.port
+    except ValueError:
+        raise RuntimeError(invalid_url_message) from None
+
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or not hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise RuntimeError(invalid_url_message)
+    if parsed.scheme != "https" and hostname not in {"localhost", "127.0.0.1", "::1"}:
         raise RuntimeError(f"{name} must use HTTPS except on localhost")
     if callback and parsed.path != "/auth/oidc/callback":
         raise RuntimeError("OIDC_REDIRECT_URI must end with /auth/oidc/callback")
