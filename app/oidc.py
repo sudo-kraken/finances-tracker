@@ -33,9 +33,16 @@ _USERNAME_MAX_LENGTH = 64
 def init_oidc(app) -> None:
     """Validate and register the optional OpenID Connect client."""
 
+    oidc_only = _config_flag(app.config.get("OIDC_ONLY", False))
+    app.config["OIDC_ONLY"] = oidc_only
     values = {name: app.config.get(name) or "" for name in _CORE_SETTINGS}
     configured = {name for name, value in values.items() if str(value).strip()}
     if not configured:
+        if oidc_only:
+            raise RuntimeError(
+                "OIDC_ONLY requires a complete OIDC configuration; set OIDC_ISSUER_URL, "
+                "OIDC_CLIENT_ID, OIDC_CLIENT_SECRET and OIDC_REDIRECT_URI"
+            )
         app.config["OIDC_ENABLED"] = False
         app.config["OIDC_DISPLAY_NAME"] = _display_name(app)
         return
@@ -52,9 +59,7 @@ def init_oidc(app) -> None:
     if len(issuer) > 255:
         raise RuntimeError("OIDC_ISSUER_URL must be no longer than 255 characters")
 
-    auto_provision = app.config.get("OIDC_AUTO_PROVISION", False)
-    if isinstance(auto_provision, str):
-        auto_provision = auto_provision.lower() in {"1", "true", "yes", "on"}
+    auto_provision = _config_flag(app.config.get("OIDC_AUTO_PROVISION", False))
 
     app.config.update(
         OIDC_ENABLED=True,
@@ -63,7 +68,8 @@ def init_oidc(app) -> None:
         OIDC_CLIENT_SECRET=str(values["OIDC_CLIENT_SECRET"]),
         OIDC_REDIRECT_URI=redirect_uri,
         OIDC_DISPLAY_NAME=_display_name(app),
-        OIDC_AUTO_PROVISION=bool(auto_provision),
+        OIDC_AUTO_PROVISION=auto_provision,
+        OIDC_ONLY=oidc_only,
     )
 
     oauth = OAuth(app)
@@ -78,6 +84,12 @@ def init_oidc(app) -> None:
         },
     )
     app.extensions[_EXTENSION_KEY] = oauth
+
+
+def _config_flag(value) -> bool:
+    if isinstance(value, str):
+        return value.lower() in {"1", "true", "yes", "on"}
+    return bool(value)
 
 
 def _display_name(app) -> str:
@@ -117,7 +129,10 @@ def _authorization_redirect(action: str, user_id: int | None = None):
     except Exception as error:  # Provider and discovery failures vary by HTTP client.
         session.pop(_FLOW_KEY, None)
         current_app.logger.warning("OIDC authorization could not start (%s)", type(error).__name__)
-        flash("Could not contact the identity provider. Local password sign-in is still available.", "error")
+        if current_app.config["OIDC_ONLY"]:
+            flash("Could not contact the identity provider. Please try again later.", "error")
+        else:
+            flash("Could not contact the identity provider. Local password sign-in is still available.", "error")
         destination = "oidc.settings" if current_user.is_authenticated else "main.login"
         return redirect(url_for(destination))
 
@@ -143,7 +158,8 @@ def settings():
     return render_template(
         "auth_settings.html",
         identity=identity,
-        can_disconnect=_recent_local_authentication(),
+        can_disconnect=not current_app.config["OIDC_ONLY"] and _recent_local_authentication(),
+        oidc_only=current_app.config["OIDC_ONLY"],
         oidc_display_name=current_app.config["OIDC_DISPLAY_NAME"],
     )
 
@@ -152,6 +168,9 @@ def settings():
 @login_required
 def link():
     _require_enabled()
+    if current_app.config["OIDC_ONLY"]:
+        flash("Account linking is disabled while OIDC-only login is enabled.", "warning")
+        return redirect(url_for("oidc.settings"))
     if not _recent_local_authentication():
         flash("Sign out and sign in with your password again before connecting an identity provider.", "warning")
         return redirect(url_for("oidc.settings"))
@@ -172,6 +191,12 @@ def link():
 @login_required
 def disconnect():
     _require_enabled()
+    if current_app.config["OIDC_ONLY"]:
+        flash(
+            f"{current_app.config['OIDC_DISPLAY_NAME']} cannot be disconnected while OIDC-only login is enabled.",
+            "warning",
+        )
+        return redirect(url_for("oidc.settings"))
     if not _recent_local_authentication():
         flash(
             f"Sign in with your local password again before disconnecting {current_app.config['OIDC_DISPLAY_NAME']}.",
@@ -201,6 +226,8 @@ def callback():
     flow = session.pop(_FLOW_KEY, None)
     if not isinstance(flow, dict) or flow.get("action") not in {"login", "link"}:
         return _authentication_failed("The sign-in request expired. Please try again.")
+    if flow["action"] == "link" and current_app.config["OIDC_ONLY"]:
+        return _authentication_failed("Account linking is disabled while OIDC-only login is enabled.", flow)
 
     try:
         token = _client().authorize_access_token()
@@ -240,6 +267,8 @@ def _validated_identity(claims) -> tuple[str, str, str | None] | None:
 
 
 def _complete_link(flow: dict, issuer: str, subject: str, email: str | None):
+    if current_app.config["OIDC_ONLY"]:
+        return _authentication_failed("Account linking is disabled while OIDC-only login is enabled.", flow)
     expected_user_id = flow.get("user_id")
     if (
         not current_user.is_authenticated
@@ -293,10 +322,17 @@ def _complete_login(issuer: str, subject: str, email: str | None, claims: Mappin
         return _log_in(identity.user)
 
     if not current_app.config["OIDC_AUTO_PROVISION"]:
-        flash(
-            "No linked account was found. Sign in with your password, then connect the identity provider from Account.",
-            "warning",
-        )
+        if current_app.config["OIDC_ONLY"]:
+            flash(
+                "No linked account was found. Ask the administrator to temporarily disable OIDC-only mode "
+                "to link the existing account, or enable OIDC auto-provisioning.",
+                "warning",
+            )
+        else:
+            flash(
+                "No linked account was found. Sign in with your password, then connect the identity provider from Account.",
+                "warning",
+            )
         return redirect(url_for("main.login"))
 
     return _provision_user(issuer, subject, email, claims)
@@ -309,10 +345,16 @@ def _provision_user(issuer: str, subject: str, email: str | None, claims: Mappin
             db.select(User).where(db.func.lower(User.username) == preferred_username.strip().lower())
         )
         if matching_user is not None and not is_legacy_owner(matching_user.username, matching_user.password_hash):
-            flash(
-                "A local account with that username already exists. Sign in with its password and connect the identity provider.",
-                "warning",
-            )
+            if current_app.config["OIDC_ONLY"]:
+                flash(
+                    "A local account with that username already exists. Ask the administrator to resolve the account link.",
+                    "warning",
+                )
+            else:
+                flash(
+                    "A local account with that username already exists. Sign in with its password and connect the identity provider.",
+                    "warning",
+                )
             return redirect(url_for("main.login"))
 
     try:
@@ -399,6 +441,8 @@ def _ensure_registration_gate() -> bool:
 
 
 def _recent_local_authentication() -> bool:
+    if current_app.config["OIDC_ONLY"]:
+        return False
     authenticated_at = session.get("local_authenticated_at")
     return (
         session.get("auth_method") == "password"

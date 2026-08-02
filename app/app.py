@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 
-from flask import Flask
+from flask import Flask, flash, redirect, session, url_for
+from flask_login import current_user, logout_user
 from sqlalchemy import event
 
 from .config import Config
@@ -56,6 +57,15 @@ def create_app(config_overrides: dict | None = None) -> Flask:
     init_oidc(app)
     app.register_blueprint(main_bp)
     app.register_blueprint(oidc_bp)
+
+    @app.before_request
+    def enforce_oidc_only_sessions():
+        if app.config["OIDC_ONLY"] and current_user.is_authenticated and session.get("auth_method") != "oidc":
+            session.clear()
+            logout_user()
+            flash(f"Sign in with {app.config['OIDC_DISPLAY_NAME']} to continue.", "warning")
+            return redirect(url_for("main.login"))
+        return None
 
     @app.after_request
     def add_security_headers(response):

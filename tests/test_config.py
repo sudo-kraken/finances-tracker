@@ -22,6 +22,17 @@ def test_config_uses_database_uri_from_environment(monkeypatch):
     importlib.reload(cfg)
 
 
+def test_oidc_only_flag_uses_environment(monkeypatch):
+    import app.config as cfg  # type: ignore
+
+    with monkeypatch.context() as scoped_monkeypatch:
+        scoped_monkeypatch.setenv("OIDC_ONLY", "true")
+        reloaded = importlib.reload(cfg)
+
+    assert reloaded.Config.OIDC_ONLY is True
+    importlib.reload(cfg)
+
+
 def test_db_folder_creation_line_is_executed(monkeypatch):
     import app.config as cfg  # type: ignore
 
