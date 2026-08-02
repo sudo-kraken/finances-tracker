@@ -5,6 +5,8 @@
 
 _A small Flask application for tracking monthly finances. Built with SQLite and uv, and designed for local or containerised runs._
 
+_Current release: [v1.2.5](https://github.com/sudo-kraken/finances-tracker/releases/tag/v1.2.5)_
+
 </div>
 
 <div align="center">

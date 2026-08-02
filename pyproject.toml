@@ -1,6 +1,6 @@
 [project]
 name = "finances-tracker"
-version = "1.2.4"
+version = "1.2.5"
 description = "Financial Tracker Application"
 readme = "README.md"
 keywords = ["python", "selfhosted", "homelab", "automation", "devops", "infrastructure", "it", "itops", "sysadmin", "systemadministration", "orchestration", "configurationmanagement"]
