@@ -4,7 +4,7 @@
 
 Maintainers and community take security bugs seriously. We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
 
-To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](../../security/advisories/new) tab.
+To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](https://github.com/sudo-kraken/finances-tracker/security/advisories/new) tab.
 
 **Please do not report security vulnerabilities through public GitHub issues, discussions, or Discord.**
 
@@ -31,7 +31,7 @@ We will send a response indicating the next steps in handling your report. After
 
 ## Third-Party Dependencies
 
-If you discover a security vulnerability in a third-party dependency used by Seerr, please report it directly to the maintainers of that module. You can also notify us through our security advisory process so we can:
+If you discover a security vulnerability in a third-party dependency used by Finances Tracker, please report it directly to the maintainers of that module. You can also notify us through our security advisory process so we can:
 
 - Track the issue and monitor for updates
 - Apply patches or workarounds if available
@@ -42,4 +42,4 @@ We regularly monitor and update our dependencies to address known security vulne
 
 ## Security Updates
 
-Security updates and advisories will be published on our [GitHub Security Advisories page](../../security/advisories).
+Security updates and advisories will be published on our [GitHub Security Advisories page](https://github.com/sudo-kraken/finances-tracker/security/advisories).

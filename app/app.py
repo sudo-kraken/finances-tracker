@@ -77,7 +77,6 @@ def create_app(config_overrides: dict | None = None) -> Flask:
     return app
 
 
-_build_app = create_app
 app = create_app()
 
 if __name__ == "__main__":
