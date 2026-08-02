@@ -3,12 +3,14 @@ from __future__ import annotations
 import importlib
 import os
 import sys
+from pathlib import Path
 from urllib.parse import urlsplit
 
 import atheris
 
 os.environ.setdefault("FINANCES_TESTING", "1")
 os.environ.setdefault("SQLALCHEMY_DATABASE_URI", "sqlite://")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 with atheris.instrument_imports():
     oidc = importlib.import_module("app.oidc")
