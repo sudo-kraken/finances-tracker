@@ -9,7 +9,7 @@ TimeoutStartSec=900
 WantedBy=default.target
 
 [Container]
-Image=ghcr.io/sudo-kraken/finances-tracker:latest
+Image=ghcr.io/sudo-kraken/finances-tracker:latest@sha256:20d1c938093be7b59bb586fc20932f40f8c2569efad90decba4c9a8fed266ea1
 Pull=newer
 ContainerName=finances-tracker
 HostName=finances-tracker
